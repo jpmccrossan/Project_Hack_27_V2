@@ -144,6 +144,53 @@ def load_macro_data(cur, data: dict) -> int:
     return count
 
 
+# ── Load assumptions CSV ──────────────────────────────────────────────────────
+
+def load_assumptions_csv(cur) -> int:
+    import csv
+    csv_path = Path(__file__).parent.parent / "Data" / "CSV" / "HPO_Assumptions_data.csv"
+    if not csv_path.exists():
+        print("  WARNING: HPO_Assumptions_data.csv not found in Data/CSV/")
+        return 0
+
+    def to_float(v):
+        try:
+            return float(v) if v not in (None, "") else None
+        except (ValueError, TypeError):
+            return None
+
+    count = 0
+    ts = datetime.now().isoformat()
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            cur.execute(
+                """INSERT OR REPLACE INTO assumptions
+                       (assumption_id, project_id, project_name, category, assumption_type,
+                        location, assumption, ticker, event_date, price_per_unit, currency,
+                        unit, qty, total_cost, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    int(row["assumption_id"]),
+                    int(row["project_id"]) if row.get("project_id") else None,
+                    row.get("project_name", ""),
+                    row.get("category", ""),
+                    row.get("assumption_type", ""),
+                    row.get("location", ""),
+                    row.get("assumption", ""),
+                    row.get("ticker", ""),
+                    row.get("event_date", ""),
+                    to_float(row.get("price_per_unit")),
+                    row.get("currency", ""),
+                    row.get("unit", ""),
+                    to_float(row.get("qty")),
+                    to_float(row.get("total_cost")),
+                    ts,
+                ),
+            )
+            count += 1
+    return count
+
+
 # ── Master loader ─────────────────────────────────────────────────────────────
 
 def load_all():
@@ -174,6 +221,7 @@ def load_all():
     n = load_energy_history(cur, energy_hist);    print(f"  Energy history:        {n} rows")
     n = load_fx_history(cur, finance_hist);       print(f"  FX history:            {n} rows")
     n = load_macro_data(cur, finance_hist);       print(f"  Macro (annual):        {n} rows")
+    n = load_assumptions_csv(cur);                print(f"  Assumptions:           {n} rows")
 
     con.commit()
     con.close()

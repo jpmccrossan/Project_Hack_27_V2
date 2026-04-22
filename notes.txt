@@ -1,10 +1,18 @@
-To run these two commands in your terminal from the project root:
-
 Step 1 — fetch data and build the database (first time only, takes ~60s):
 python API_Connection_Files/run_all.py
 
-Step 2 — launch the dashboard:
-python -m streamlit run dashboard.py
+Step 2 — launch the app:
+python -m streamlit run app.py
+
 Streamlit will print a local URL like http://localhost:8501 — open that in your browser.
 
-After that, you only need Step 1 again when you want to refresh the data. The Refresh button in the sidebar handles reloading within the dashboard itself.
+Pages (navigate via sidebar):
+  Home              — app.py               — status and navigation
+  📊 Cost Dashboard — pages/1_📊_...       — live prices, charts, risk ratings
+
+After that, only re-run Step 1 when you want to refresh market data.
+The Refresh button in the sidebar of the Cost Dashboard handles cache reloading.
+
+Database: Data/jet_engine_costs.db
+  Tables: commodities, price_snapshots, price_history, macro_data,
+          jet_engine_components, component_materials, assumptions (HPO register)

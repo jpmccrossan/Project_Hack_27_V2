@@ -115,6 +115,26 @@ CREATE TABLE IF NOT EXISTS macro_commodity_relationships (
     notes                TEXT
 );
 
+-- ── HPO Assumptions register ──────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS assumptions (
+    assumption_id   INTEGER PRIMARY KEY,
+    project_id      INTEGER,
+    project_name    TEXT,
+    category        TEXT,
+    assumption_type TEXT,
+    location        TEXT,
+    assumption      TEXT,
+    ticker          TEXT,
+    event_date      TEXT,
+    price_per_unit  REAL,
+    currency        TEXT,
+    unit            TEXT,
+    qty             REAL,
+    total_cost      REAL,
+    updated_at      TEXT
+);
+
 -- ── Jet engine context ────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS jet_engine_components (
