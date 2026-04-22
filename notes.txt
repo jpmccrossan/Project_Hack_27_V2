@@ -1,0 +1,10 @@
+To run these two commands in your terminal from the project root:
+
+Step 1 — fetch data and build the database (first time only, takes ~60s):
+python API_Connection_Files/run_all.py
+
+Step 2 — launch the dashboard:
+python -m streamlit run dashboard.py
+Streamlit will print a local URL like http://localhost:8501 — open that in your browser.
+
+After that, you only need Step 1 again when you want to refresh the data. The Refresh button in the sidebar handles reloading within the dashboard itself.

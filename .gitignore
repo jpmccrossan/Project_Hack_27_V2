@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv
+venv
+
+# Generated data output — re-fetched on each run, not source code
+Data/CSV/
+Data/JSON/
+Data/*.db
+
+# Stale root-level output files from before Data/ folder was created
+*.csv
+*.json
+
+# macOS
+.DS_Store
+
+# Environment / secrets — in case API keys are added later
+.env
+*.env
