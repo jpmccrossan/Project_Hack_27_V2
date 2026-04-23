@@ -621,6 +621,106 @@ with tab_int:
                 st.line_chart(pivot, height=300, use_container_width=True)
                 st.caption("Each line = one tracked assumption. Shows confidence change over time.")
 
+        # ── Assumption relevance timeline ──────────────────────────────────────
+        st.markdown("**Assumption relevance timeline — date added → next review due**")
+        st.caption(
+            "Bar spans from when the assumption was logged to when the next review is due. "
+            "Blue tick = date last reviewed. Gold dashed line = today. "
+            "Colour = net drift magnitude — red bars are drifting furthest from baseline."
+        )
+
+        tl_df = df_view[[
+            "assumption_id", "title", "created_at", "last_review_date",
+            "review_interval_days", "net_drift_pct", "review_status", "project_name",
+        ]].copy()
+
+        tl_df["start"]    = pd.to_datetime(tl_df["created_at"], format="ISO8601").dt.date
+        tl_df["reviewed"] = pd.to_datetime(tl_df["last_review_date"], errors="coerce").dt.date
+        tl_df["next_due"] = tl_df.apply(
+            lambda r: r["reviewed"] + pd.Timedelta(days=int(r["review_interval_days"]))
+                      if pd.notna(r["reviewed"]) else r["reviewed"],
+            axis=1,
+        )
+        tl_df["today"] = date.today()
+        tl_df["label"] = tl_df.apply(
+            lambda r: f"{r['assumption_id']} · {str(r['title'])[:38]}", axis=1
+        )
+        tl_df["drift_abs"]  = (tl_df["net_drift_pct"].abs() * 100).round(1)
+        tl_df["drift_band"] = tl_df["drift_abs"].apply(
+            lambda v: "High drift (>20%)" if v > 20 else
+                      "Moderate (5–20%)"  if v > 5  else "Low drift (<5%)"
+        )
+        for col in ["start", "reviewed", "next_due", "today"]:
+            tl_df[col] = tl_df[col].astype(str)
+        tl_df = tl_df.sort_values("drift_abs", ascending=False)
+
+        relevance_chart = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+            "background": "#06091A",
+            "data": {"values": tl_df.to_dict(orient="records")},
+            "height": min(550, max(140, 24 * len(tl_df))),
+            "layer": [
+                # Bar: date added → next review due
+                {
+                    "mark": {"type": "bar", "cornerRadius": 2, "height": 12, "opacity": 0.85},
+                    "encoding": {
+                        "y": {
+                            "field": "label", "type": "ordinal", "sort": None,
+                            "axis": {"labelColor": "#4FC3F7", "labelFontSize": 10, "title": None},
+                        },
+                        "x":  {"field": "start",    "type": "temporal",
+                               "axis": {"labelColor": "#4FC3F7", "gridColor": "#0C1629",
+                                        "title": "Date", "format": "%b %Y"}},
+                        "x2": {"field": "next_due"},
+                        "color": {
+                            "field": "drift_band", "type": "nominal",
+                            "scale": {
+                                "domain": ["Low drift (<5%)", "Moderate (5–20%)", "High drift (>20%)"],
+                                "range":  ["#66BB6A",         "#FFA726",           "#EF5350"],
+                            },
+                            "legend": {"labelColor": "#4FC3F7", "title": None, "orient": "top-right"},
+                        },
+                        "tooltip": [
+                            {"field": "assumption_id", "title": "ID"},
+                            {"field": "title",         "title": "Title"},
+                            {"field": "project_name",  "title": "Project"},
+                            {"field": "start",         "title": "Date added",    "type": "temporal"},
+                            {"field": "reviewed",      "title": "Last reviewed", "type": "temporal"},
+                            {"field": "next_due",      "title": "Next due",      "type": "temporal"},
+                            {"field": "drift_abs",     "title": "Net drift (%)"},
+                            {"field": "review_status", "title": "Review status"},
+                        ],
+                    },
+                },
+                # Tick: last review date (blue)
+                {
+                    "mark": {"type": "tick", "color": "#4FC3F7", "thickness": 2,
+                             "height": 18, "opacity": 0.9},
+                    "encoding": {
+                        "y": {"field": "label", "type": "ordinal"},
+                        "x": {"field": "reviewed", "type": "temporal"},
+                        "tooltip": [
+                            {"field": "assumption_id", "title": "ID"},
+                            {"field": "reviewed", "title": "Last reviewed", "type": "temporal"},
+                        ],
+                    },
+                },
+                # Rule: today (gold dashed)
+                {
+                    "mark": {"type": "rule", "color": "#C4A44A",
+                             "strokeDash": [5, 3], "size": 2, "opacity": 0.8},
+                    "encoding": {"x": {"field": "today", "type": "temporal"}},
+                },
+            ],
+        }
+        st.vega_lite_chart(tl_df, relevance_chart, use_container_width=True)
+        st.caption(
+            "Bar: date logged → next review due.  "
+            "Blue tick = last review date.  "
+            "Gold line = today.  "
+            "Colour = net drift magnitude."
+        )
+
         st.divider()
 
         # ── Assumption cards ───────────────────────────────────────────────────
