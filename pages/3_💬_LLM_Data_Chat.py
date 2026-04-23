@@ -262,7 +262,7 @@ if "llm_messages" not in st.session_state:
     st.session_state.llm_messages = []
 
 # ── Suggested prompts (empty chat only) ───────────────────────────────────────
-SUGGESTIONS = [
+SUGGESTIONS_EXTERNAL = [
     ("🔴  Full Risk Report",
      "Generate a comprehensive cost risk report for all jet engine components, "
      "ranked by exposure. Include current prices, 1-year trends, JIC risk levels, "
@@ -290,19 +290,69 @@ SUGGESTIONS = [
      "fixed-price contracts, and which should remain spot-priced? Justify with data."),
 ]
 
+SUGGESTIONS_INTERNAL = [
+    ("🎯  Deliverability Summary",
+     "Give me a deliverability summary for all 8 projects. For each one, show the project name, "
+     "customer, current confidence score, project status, and how the confidence has changed "
+     "over the last 30 days based on the audit log. Flag any project where confidence has dropped."),
+    ("⚠  High Risk Assumptions",
+     "List all internal assumptions (from assumption_tracker) that are currently flagged as "
+     "High risk by the AI assessment. Group them by project, show the owner, net drift, "
+     "confidence score, and AI rationale. Which project has the most high-risk items?"),
+    ("📉  Confidence Trends",
+     "Using the project_audit_log, show me how each project's confidence score has changed "
+     "over time. Which projects are trending down? Which reviewer roles have submitted the "
+     "most reviews? Are any projects overdue for a review?"),
+    ("🔍  Project Deep Dive",
+     "Give me a full breakdown of the Turbine manufacturing project. Include: budget vs current "
+     "external cost exposure, all material and energy assumptions with live price drift, "
+     "all internal tracker assumptions with their status and confidence, any AI-flagged risks, "
+     "and the recent change history from the audit log."),
+    ("📋  Overdue Reviews",
+     "Which internal assumptions in the tracker are overdue for review? "
+     "Calculate overdue based on last_review_date + review_interval_days vs today. "
+     "List them with the owner name, how many days overdue, and the current status."),
+    ("🏆  Best & Worst Projects",
+     "Compare all 8 projects and rank them from most to least deliverable. "
+     "Use a combination of: confidence score, project status, number of high-risk AI-flagged "
+     "assumptions, and the count of overdue internal tracker reviews. Explain your ranking."),
+    ("💰  Budget Exposure",
+     "For each project, calculate the total external cost in GBP (from assumptions table, "
+     "converted using the live GBP/USD rate) and compare it to the project budget. "
+     "Show the budget utilisation percentage and flag which projects are over their threshold."),
+    ("🔗  Combined Risk View",
+     "For the Fan blade manufacturing project, give me a combined risk view joining external "
+     "market assumptions (with live price drift) and internal tracker assumptions. "
+     "Which risks are being driven by market forces vs internal team factors? "
+     "What single action would most improve deliverability?"),
+]
+
 if not st.session_state.llm_messages:
     st.markdown(
         "<div style='color:{d};font-size:0.7rem;text-transform:uppercase;"
-        "letter-spacing:0.15em;margin-bottom:10px;'>Quick start — click to send</div>".format(d=BLUE_DIM),
+        "letter-spacing:0.15em;margin-bottom:8px;'>🌍 External — market prices & costs</div>".format(d=BLUE_DIM),
         unsafe_allow_html=True,
     )
     col_a, col_b = st.columns(2)
-    for i, (label, prompt_text) in enumerate(SUGGESTIONS):
+    for i, (label, prompt_text) in enumerate(SUGGESTIONS_EXTERNAL):
         col = col_a if i % 2 == 0 else col_b
-        if col.button(label, key="sug_{}".format(i), use_container_width=True, help=prompt_text):
+        if col.button(label, key="sug_ext_{}".format(i), use_container_width=True, help=prompt_text):
             st.session_state.llm_messages.append({"role": "user", "content": prompt_text})
             st.rerun()
-    st.markdown("<div style='margin-top:4px'></div>", unsafe_allow_html=True)
+
+    st.markdown(
+        "<div style='color:{d};font-size:0.7rem;text-transform:uppercase;"
+        "letter-spacing:0.15em;margin-top:14px;margin-bottom:8px;'>🏢 Internal — projects, confidence & tracker</div>".format(d=BLUE_DIM),
+        unsafe_allow_html=True,
+    )
+    col_c, col_d = st.columns(2)
+    for i, (label, prompt_text) in enumerate(SUGGESTIONS_INTERNAL):
+        col = col_c if i % 2 == 0 else col_d
+        if col.button(label, key="sug_int_{}".format(i), use_container_width=True, help=prompt_text):
+            st.session_state.llm_messages.append({"role": "user", "content": prompt_text})
+            st.rerun()
+
+    st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
 
 # ── Render chat history ────────────────────────────────────────────────────────
 for msg in st.session_state.llm_messages:
@@ -341,67 +391,42 @@ else:
         _pending = True
 
     if _pending:
-        _sys = {"role": "system", "content": st.session_state.llm_system_prompt}
+        _sys  = {"role": "system", "content": st.session_state.llm_system_prompt}
         _conv = [{"role": m["role"], "content": m["content"]}
                  for m in st.session_state.llm_messages]
         _msgs = [_sys] + _conv
 
         with st.chat_message("assistant"):
-            _thinking = st.empty()
-            _thinking.markdown(_THINKING_HTML, unsafe_allow_html=True)
+            _ph = st.empty()
+            _ph.markdown(
+                "<div style='color:{d};font-size:0.85rem;'>"
+                "<span style='animation:pulse 1s infinite;'>⬡</span>&nbsp; Thinking…</div>"
+                "<style>@keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:0.3}}}}</style>"
+                .format(d=BLUE_DIM), unsafe_allow_html=True
+            )
 
-            # ── Agentic SQL loop ────────────────────────────────────────────────
-            # Round 1: always stream so user sees the model thinking / writing SQL.
-            # If response contains SQL blocks, execute them, inject results, repeat.
-            # Each subsequent round is also streamed. Loop until no SQL or max rounds.
+            # Round 1 — stream so user sees tokens arrive
+            _round1 = _stream_to(_ph, _model, _msgs)
+            _msgs   = _msgs + [{"role": "assistant", "content": _round1}]
+            _final  = _round1
 
-            _ans_ph = st.empty()
-            _round_text = _stream_to(_ans_ph, _model, _msgs)
-            _thinking.empty()
-
-            _msgs = _msgs + [{"role": "assistant", "content": _round_text}]
-            _final = _round_text
-
-            for _rnd in range(_MAX_ROUNDS - 1):
+            # If model wrote SQL, execute it and get a final answer
+            for _ in range(_MAX_ROUNDS - 1):
                 _sqls = _extract_sql(_final)
                 if not _sqls:
-                    break  # no SQL in last response — we're done
-
-                # Execute every SQL block, show results
-                _result_parts = []
-                with st.expander(
-                    "📊 {} quer{} executed".format(len(_sqls), "y" if len(_sqls) == 1 else "ies"),
-                    expanded=True,
-                ):
-                    for _sql in _sqls:
-                        st.code(_sql, language="sql")
-                        _res = execute_sql(_sql)
-                        _display = _res[:1200] + "\n…[truncated]" if len(_res) > 1200 else _res
-                        st.code(_display, language="text")
-                        _result_parts.append("Query:\n{}\n\nResult:\n{}".format(_sql, _res))
-
-                _result_content = "\n\n---\n\n".join(_result_parts)
+                    break
+                _parts = []
+                for _sql in _sqls:
+                    _parts.append("Query:\n{}\n\nResult:\n{}".format(_sql, execute_sql(_sql)))
                 _msgs = _msgs + [{
                     "role": "user",
-                    "content": (
-                        "Query results:\n\n{}\n\n"
-                        "Using these results, answer the original question directly. "
-                        "If you need more data write another SQL query. "
-                        "Otherwise give your final answer now."
-                    ).format(_result_content),
+                    "content": "Results:\n\n{}\n\nAnswer the question. No SQL.".format(
+                        "\n\n---\n\n".join(_parts)
+                    ),
                 }]
+                _final = _stream_to(_ph, _model, _msgs)
+                _msgs  = _msgs + [{"role": "assistant", "content": _final}]
 
-                _next_ph = st.empty()
-                _next_ph.markdown(
-                    "<div style='color:{d};font-size:0.8rem;margin-top:4px;'>"
-                    "⬡ Reasoning over results…</div>".format(d=BLUE_DIM),
-                    unsafe_allow_html=True,
-                )
-                _next_text = _stream_to(_next_ph, _model, _msgs)
-                _msgs = _msgs + [{"role": "assistant", "content": _next_text}]
-                _final = _next_text
-
-            # Only the last assistant text is saved as the visible reply
             st.session_state.llm_messages.append(
-                {"role": "assistant", "content": _final}
+                {"role": "assistant", "content": _SQL_RE.sub("", _final).strip()}
             )

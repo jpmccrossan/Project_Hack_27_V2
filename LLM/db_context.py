@@ -91,92 +91,55 @@ def execute_sql(query: str) -> str:
 
 
 def _build_schema_description():
-    """
-    Build a rich schema description with table purposes, column names,
-    and sample values for small lookup tables so the model can write correct SQL.
-    """
+    """Compact schema — enough for the model to write correct SQL, nothing more."""
     lines = []
 
-    # ── Lookup tables with sample values ──────────────────────────────────────
-    cats = _q("SELECT id, name FROM categories ORDER BY name")
-    if not cats.empty:
-        vals = ", ".join("{} (id={})".format(r["name"], r["id"]) for _, r in cats.iterrows())
-        lines.append("categories: " + vals)
-
+    # Commodity names grouped by category (needed for WHERE c.name = '...' clauses)
     comms = _q("""
-        SELECT c.name, c.unit, cat.name AS category
+        SELECT c.name, c.ticker, c.unit, cat.name AS cat
         FROM commodities c JOIN categories cat ON c.category_id = cat.id
         ORDER BY cat.name, c.name
     """)
     if not comms.empty:
-        lines.append("\ncommodities (id, name, category_id, unit, ticker, source):")
-        for cat, grp in comms.groupby("category"):
+        lines.append("commodities (id, name, category_id, unit, ticker):")
+        for cat, grp in comms.groupby("cat"):
             entries = ", ".join(
-                '"{}" [{}]'.format(r["name"], r["unit"])
-                for _, r in grp.iterrows()
+                '"{}" [{}]'.format(r["name"], r["unit"]) for _, r in grp.iterrows()
             )
             lines.append("  [{}] {}".format(cat, entries))
 
-    macro_inds = _q("SELECT id, name, unit FROM macro_indicators ORDER BY name")
-    if not macro_inds.empty:
-        vals = " | ".join(
-            '{} (id={}, unit={})'.format(r["name"], r["id"], r["unit"])
-            for _, r in macro_inds.iterrows()
-        )
-        lines.append("\nmacro_indicators: " + vals)
-
-    countries = _q("SELECT id, name FROM countries ORDER BY name LIMIT 20")
-    if not countries.empty:
-        vals = ", ".join("{} (id={})".format(r["name"], r["id"]) for _, r in countries.iterrows())
-        lines.append("\ncountries (sample): " + vals)
-
-    comp_df = _q("SELECT id, name FROM jet_engine_components ORDER BY name")
-    if not comp_df.empty:
-        vals = ", ".join("{} (id={})".format(r["name"], r["id"]) for _, r in comp_df.iterrows())
-        lines.append("\njet_engine_components: " + vals)
-
-    # ── Large tables: schema only ──────────────────────────────────────────────
     lines.append("""
-price_snapshots (id, commodity_id, price [USD], fetched_at):
-  Latest snapshot per commodity: WHERE id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
+price_snapshots (commodity_id, price [USD], fetched_at)
+  Latest price: WHERE id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
 
-price_history (id, commodity_id, date [YYYY-MM-DD], open, high, low, close [USD], volume):
-  Weekly OHLC data from 2021-04-19 to present. ~262 rows per commodity.
-  Date range query: WHERE date >= DATE('now', '-N days') or '-N months' or '-N years'
-  1-year change: compare latest snapshot price vs price_history where date <= DATE('now','-1 year')
+price_history (commodity_id, date [YYYY-MM-DD], close [USD])
+  Weekly data 2021–present. 1-year change: compare snapshot vs WHERE date <= DATE('now','-1 year')
 
-assumptions (88 rows): assumption_id, project_id, project_name, category, assumption_type [boolean|economic|material],
-  location [Internal|External], assumption [text], ticker, event_date, price_per_unit, currency, unit, qty, total_cost,
-  ai_classification [Assumption|Risk|Assumption+Risk], ai_risk_level [High|Medium|Low|N/A],
-  ai_rationale [text], ai_assessed_at [timestamp]
-  JOIN to commodities via ticker to get live prices. Projects: Engine Casing, Fan blade manufacturing,
-  Compressor assembly, Chamber fabrication, Turbine manufacturing, Nozzle assembly, Bearing assembly, Fuel system components.
+assumptions (assumption_id, project_id, project_name, assumption_type [boolean|economic|material|energy],
+  assumption, ticker, price_per_unit, currency, unit, qty, total_cost,
+  ai_classification, ai_risk_level, ai_rationale)
+  8 projects: Engine Casing, Fan blade manufacturing, Compressor assembly, Chamber fabrication,
+  Turbine manufacturing, Nozzle assembly, Bearing assembly, Fuel system components.
+  JOIN commodities ON c.ticker = a.ticker||'=F' OR c.ticker = a.ticker
 
-projects (8 rows): project_id, project_name, customer_name, budget_gbp, budget_threshold_pct,
-  confidence_score [0-100], status [Active|Monitor|At Risk|On Hold|Complete], description, created_at, updated_at
-  JOIN to assumptions via project_id to get all costs and risks for a project.
+projects (project_id, project_name, customer_name, budget_gbp, budget_threshold_pct,
+  confidence_score, status [Active|Monitor|At Risk|On Hold|Complete])
 
-project_audit_log: id, project_id, timestamp, field_name, old_value, new_value, user, change_reason
-  Tracks changes to project confidence, budget etc. over time. Query for trends:
-  SELECT timestamp, new_value FROM project_audit_log WHERE project_id=X AND field_name='confidence_score' ORDER BY timestamp
+project_audit_log (project_id, timestamp, field_name, old_value, new_value, user, change_reason)
+  Confidence history: WHERE field_name='confidence_score' ORDER BY timestamp
 
-assumption_tracker: assumption_id [ASXXX], title, category, owner, description, baseline_value, current_value,
-  unit, internal_drift_pct, external_drift_pct, confidence_score, last_review_date, review_interval_days,
-  dependencies, status [Open|Monitor|Mitigated|Closed], created_at, updated_at
-  Internal project assumptions with drift tracking and confidence scoring.
+assumption_tracker (assumption_id [ASXXX], project_name, title, category, owner,
+  baseline_value, current_value, unit, internal_drift_pct, external_drift_pct,
+  confidence_score, last_review_date, status [Open|Monitor|Mitigated|Closed],
+  ai_classification, ai_risk_level, ai_rationale)
 
-assumption_audit_log: id, timestamp, assumption_id, action [CREATE|UPDATE|DELETE],
-  field_name, old_value, new_value, user, change_reason
+assumption_audit_log (timestamp, assumption_id, field_name, old_value, new_value, user)
 
-component_materials (component_id, commodity_id, weight):
-  Links jet_engine_components to commodities. Use to find which materials are in a component.
-
-macro_data (id, country_id, indicator_id, value, year, source):
-  Annual World Bank macro data. Latest year: SELECT MAX(year) FROM macro_data WHERE country_id=X AND indicator_id=Y
-
-commodity_relationships (id, from_commodity_id, to_commodity_id, relationship_type_id, strength, notes)
-relationship_types (id, name)
-macro_commodity_relationships (id, indicator_id, commodity_id, relationship_type_id, direction, strength, notes)""")
+macro_data (country_id, indicator_id, value, year)
+countries (id, name) — UK=1, US=2, Australia=3, Canada=4, Japan=5, Germany=6, France=7, China=8
+macro_indicators (id, name) — CPI=1, GDP Growth=2, Unemployment=3, Lending Rate=4, Real Interest=5
+component_materials (component_id, commodity_id, weight)
+jet_engine_components (id, name) — query: SELECT id,name FROM jet_engine_components""")
 
     return "\n".join(lines)
 

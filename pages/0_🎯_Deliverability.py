@@ -396,35 +396,48 @@ with tab_overview:
             )
     else:
         # Table view
+        _STATUS_ICON = {
+            "Active": "🟢", "Monitor": "🟡", "At Risk": "🔴",
+            "On Hold": "⚫", "Complete": "✅",
+        }
         rows = []
         for _, proj in filtered.iterrows():
-            pid = int(proj["project_id"])
+            pid     = int(proj["project_id"])
             ext_usd = cost_map.get(pid, {}).get("ext_cost_usd") or 0
             ext_gbp = ext_usd / gbp_rate
             budget  = float(proj.get("budget_gbp") or 0)
             thresh  = float(proj.get("budget_threshold_pct") or 10)
             conf    = int(proj.get("confidence_score") or 70)
             drift   = drift_map.get(pid, {}).get("avg_drift_pct")
-            rag_lbl, _, rag_icon = _rag(ext_gbp, budget, thresh)
-            deliv   = _deliverability_score(conf, _rag(ext_gbp, budget, thresh)[1], drift)
+            rag_lbl, rag_col, rag_icon = _rag(ext_gbp, budget, thresh)
+            rag_color                  = rag_col
+            deliv                      = _deliverability_score(conf, rag_color, drift)
+            conf_jic,  _               = jic_label(conf)
+            deliv_jic, _               = jic_label(deliv)
+            status_txt                 = str(proj.get("status", "Active"))
             rows.append({
-                "ID": pid,
-                "Project": proj["project_name"],
-                "Customer": proj.get("customer_name", "—"),
-                "Status": proj.get("status", ""),
-                "Budget (£)": budget,
-                "Cost (£)": round(ext_gbp, 0),
-                "Budget status": f"{rag_icon} {rag_lbl}",
-                "Mkt drift": f"{drift:+.1f}%" if drift is not None else "—",
-                "Confidence": conf,
+                "Project":        proj["project_name"],
+                "Customer":       proj.get("customer_name", "—"),
+                "Status":         f"{_STATUS_ICON.get(status_txt, '⚪')} {status_txt}",
+                "Budget (£)":     budget,
+                "Cost (£)":       round(ext_gbp, 0),
+                "Budget status":  rag_lbl,
+                "Mkt drift":      f"{drift:+.1f}%" if drift is not None else "—",
+                "Confidence":     conf,
+                "Conf. level":    conf_jic,
                 "Deliverability": deliv,
+                "Deliv. level":   deliv_jic,
             })
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True,
                      column_config={
-                         "Budget (£)": st.column_config.NumberColumn(format="£%.0f"),
-                         "Cost (£)":   st.column_config.NumberColumn(format="£%.0f"),
-                         "Confidence": st.column_config.ProgressColumn(min_value=0, max_value=100),
-                         "Deliverability": st.column_config.ProgressColumn(min_value=0, max_value=100),
+                         "Budget (£)":     st.column_config.NumberColumn(format="£%.0f"),
+                         "Cost (£)":       st.column_config.NumberColumn(format="£%.0f"),
+                         "Confidence":     st.column_config.ProgressColumn(
+                             "Confidence", min_value=0, max_value=100),
+                         "Deliverability": st.column_config.ProgressColumn(
+                             "Deliverability", min_value=0, max_value=100),
+                         "Conf. level":    st.column_config.TextColumn("Conf. level"),
+                         "Deliv. level":   st.column_config.TextColumn("Deliv. level"),
                      })
 
 # ── Project detail ────────────────────────────────────────────────────────────

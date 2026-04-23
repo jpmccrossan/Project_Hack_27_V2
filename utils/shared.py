@@ -51,9 +51,9 @@ RISK_BADGE_COLORS: dict[str, tuple[str, str]] = {
     "N/A":    ("#1A8CBF", "#0D2040"),
 }
 CLASS_BADGE_COLORS: dict[str, tuple[str, str]] = {
-    "Risk":             ("#EF5350", "#1A0000"),
+    "Risk":             ("#FFA726", "#1A0D00"),
     "Assumption":       ("#4FC3F7", "#0D2040"),
-    "Assumption+Risk":  ("#FFA726", "#1A0D00"),
+    "Assumption+Risk":  ("#C4A44A", "#1A1000"),
 }
 
 

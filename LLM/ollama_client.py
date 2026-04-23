@@ -14,9 +14,9 @@ def is_ollama_running():
 
 
 _EMBED_KEYWORDS   = ("embed", "nomic", "mxbai", "all-minilm", "bge-")
-# General chat models are preferred over coding-specialist models for analytical tasks
-_PREFER_KEYWORDS  = ("gemma", "llama", "mistral", "mixtral", "phi", "deepseek-v", "command")
-_DEPRIORI_KEYWORDS = ("coder", "code", "starcoder", "codellama")
+# Prefer smaller/faster models — large models (12b+) are too slow for interactive use
+_PREFER_KEYWORDS   = ("1.5b", "3b", "7b", "8b", "qwen", "phi", "gemma2:2b", "mistral:7b")
+_DEPRIORI_KEYWORDS = ("12b", "13b", "14b", "33b", "70b", "starcoder", "codellama")
 
 
 def list_models():
@@ -50,7 +50,7 @@ def chat_complete(model, messages):
         "model": model,
         "messages": messages,
         "stream": False,
-        "options": {"temperature": 0.1, "num_ctx": 16384},
+        "options": {"temperature": 0.1, "num_ctx": 4096},
     }
     try:
         resp = requests.post(OLLAMA_BASE + "/api/chat", json=payload, timeout=DEFAULT_TIMEOUT)
@@ -71,8 +71,8 @@ def chat_stream(model, messages):
         "messages": messages,
         "stream": True,
         "options": {
-            "temperature": 0.2,   # low = focused, less hedging, less hallucination
-            "num_ctx": 16384,     # ensure full system prompt + history fits
+            "temperature": 0.2,
+            "num_ctx": 4096,
             "top_p": 0.9,
         },
     }

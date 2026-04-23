@@ -310,23 +310,82 @@ def sparkline(names: list, gbp_rate: float) -> go.Figure:
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
-try:
-    last = q("SELECT MAX(fetched_at) AS ts FROM price_snapshots")["ts"].iloc[0]
-    last_fmt = pd.to_datetime(last).strftime("%d/%m/%Y %H:%M") if last else "No data"
-except Exception:
-    last_fmt = "No data"
+import time as _time
 
-_RUN_ALL = Path(__file__).parent.parent / "API_Connection_Files" / "run_all.py"
+_RUN_ALL    = Path(__file__).parent.parent / "API_Connection_Files" / "run_all.py"
+_FETCH_LIVE = Path(__file__).parent.parent / "API_Connection_Files" / "fetch_live.py"
+_INTERVALS  = {"30s": 30, "1 min": 60, "5 min": 300, "15 min": 900}
+
+# Sidebar controls — always visible, never blocked
 with st.sidebar:
-    if st.button("🔄 Refresh market data", use_container_width=True):
-        with st.spinner("Fetching live data — ~60s…"):
-            subprocess.run([sys.executable, str(_RUN_ALL)], check=False)
-        st.cache_data.clear()
-        st.rerun()
+    live_on = st.toggle(
+        "Live data refresh", value=st.session_state.get("_live_on", False),
+        help="Auto-fetch fresh market prices. Page stays fully interactive between fetches.",
+    )
+    st.session_state["_live_on"] = live_on
+
+    if live_on:
+        interval_label = st.selectbox("Refresh interval", list(_INTERVALS.keys()), index=1,
+                                      key="_interval_sel")
+        st.session_state["_interval_secs"] = _INTERVALS[interval_label]
+    else:
+        if st.button("🔄 Refresh market data", use_container_width=True):
+            with st.spinner("Fetching live data — ~60s…"):
+                subprocess.run([sys.executable, str(_RUN_ALL)], check=False)
+            st.cache_data.clear()
+            st.session_state.pop("_last_live_refresh", None)
+            st.rerun()
+
+    try:
+        last = q("SELECT MAX(fetched_at) AS ts FROM price_snapshots")["ts"].iloc[0]
+        last_fmt = pd.to_datetime(last).strftime("%d/%m/%Y %H:%M") if last else "No data"
+    except Exception:
+        last_fmt = "No data"
     st.caption(f"Last fetch: {last_fmt}")
     st.divider()
     GBP_RATE = get_gbp_usd()
     st.caption(f"GBP/USD  {GBP_RATE:.4f}  ·  Yahoo Finance / World Bank")
+
+
+# ── Live refresh — background thread, no blocking, no greying out ─────────────
+import threading as _threading
+
+_FETCH_LOCK = _threading.Lock()  # prevents concurrent fetches
+
+
+def _do_fetch_in_background():
+    """Run fetch_live.py in a daemon thread. Page stays fully interactive."""
+    if not _FETCH_LOCK.acquire(blocking=False):
+        return  # a fetch is already running
+    try:
+        subprocess.run([sys.executable, str(_FETCH_LIVE)], capture_output=True, timeout=120)
+        st.session_state["_last_live_refresh"] = _time.time()
+        st.session_state["_fetching"] = False
+    finally:
+        _FETCH_LOCK.release()
+
+
+@st.fragment(run_every="1s")
+def _live_refresh_ticker():
+    """Ticks every second. Launches fetch in background; never blocks the UI."""
+    if not st.session_state.get("_live_on", False):
+        return
+
+    interval  = st.session_state.get("_interval_secs", 60)
+    last_done = st.session_state.get("_last_live_refresh", 0)
+    fetching  = st.session_state.get("_fetching", False)
+    elapsed   = _time.time() - last_done
+    remaining = max(0, interval - elapsed)
+
+    if elapsed >= interval and not fetching:
+        st.session_state["_fetching"] = True
+        _threading.Thread(target=_do_fetch_in_background, daemon=True).start()
+
+    label = "Fetching new prices…" if fetching else f"next refresh in {int(remaining)}s"
+    st.caption(f"🔄 Live — {label}", help="Toggle off in sidebar to stop. Page shows latest cached data while fetching.")
+
+
+_live_refresh_ticker()
 
 # ── Page tabs (replaces sidebar radio) ───────────────────────────────────────
 _tab_overview, _tab_metals, _tab_energy, _tab_components, _tab_fx, _tab_rel = st.tabs([

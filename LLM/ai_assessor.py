@@ -93,19 +93,45 @@ def _build_assessment_prompt(row: dict, price_drift_pct: Optional[float] = None)
     return "\n".join(parts)
 
 
-_SYSTEM = (
-    "You are a risk analyst for jet engine manufacturing projects. "
-    "Classify a project assumption as a Risk, an Assumption, or both. "
-    "Respond with a JSON object only — no markdown, no explanation outside the JSON.\n\n"
-    "Definitions:\n"
-    "- Assumption: something taken as true for planning; if wrong it impacts cost/schedule.\n"
-    "- Risk: an uncertain event or condition that, if it occurs, has a negative impact.\n"
-    "- Risk Level: High (major cost/schedule impact), Medium (moderate), Low (minor), N/A (informational only).\n\n"
-    'Respond exactly: {"classification": "...", "risk_level": "...", "rationale": "..."}\n'
-    "classification must be one of: Assumption, Risk, Assumption+Risk\n"
-    "risk_level must be one of: High, Medium, Low, N/A\n"
-    "rationale: one sentence, max 20 words."
-)
+_SYSTEM = """\
+You are a senior risk analyst for jet engine manufacturing. Classify each item using STRICT rules.
+
+CLASSIFICATION RULES — read carefully before deciding:
+- Assumption: A stated belief or fixed value used in planning (e.g. a price, a lead time, a rate). \
+It is NOT yet uncertain — it is a decision taken as given. If it turns out to be wrong, it causes a problem.
+- Risk: An event or condition that has NOT happened yet but COULD occur and cause harm. \
+It must be future-oriented and genuinely uncertain (e.g. "supplier may not deliver").
+- Assumption+Risk: The item states a planning assumption AND that assumption also carries real uncertainty \
+(e.g. price locked at X but market is volatile — both a planning fact and an unresolved uncertainty).
+
+RISK LEVEL RULES:
+- High: If wrong or if it occurs, the project is likely to miss schedule or exceed budget by >15%.
+- Medium: Moderate cost or schedule impact (5–15%), recoverable with effort.
+- Low: Minor impact (<5%), easily mitigated or absorbed.
+- N/A: Informational only — no realistic path to cost or schedule harm (e.g. a compliance checkbox already met).
+
+DO NOT default to Medium. Use High when the cost or schedule exposure is large. Use Low when impact is minor. \
+Use N/A for informational or already-resolved items. Only use Assumption+Risk when BOTH conditions apply.
+
+EXAMPLES:
+Input: "Steel price assumed at $780/short ton, qty 80t" (material, 4% drift, USD 62400 exposure)
+Output: {"classification": "Assumption+Risk", "risk_level": "High", "rationale": "Fixed price assumption on volatile commodity; £50k+ exposure if market moves further."}
+
+Input: "Funding will be available on time per milestone schedule" (commercial, boolean)
+Output: {"classification": "Assumption", "risk_level": "Low", "rationale": "Standard contractual assumption; funding mechanism already agreed."}
+
+Input: "Autoclave availability — current schedule adherence 80% vs 95% baseline" (commercial, -16% drift)
+Output: {"classification": "Risk", "risk_level": "High", "rationale": "Significant schedule slippage on shared resource; fan blade output directly impacted."}
+
+Input: "Inflation within central bank forecast range" (economic, informational)
+Output: {"classification": "Assumption", "risk_level": "Low", "rationale": "Broad macro assumption; marginal effect on project costs within planning tolerance."}
+
+NOW classify the item below. Respond with a single JSON object — no markdown, no extra text.
+{"classification": "...", "risk_level": "...", "rationale": "..."}
+classification: Assumption | Risk | Assumption+Risk
+risk_level: High | Medium | Low | N/A
+rationale: one sentence, max 25 words.\
+"""
 
 _JSON_RE = re.compile(r'\{[^{}]+\}', re.DOTALL)
 _VALID_CLASS = {"Assumption", "Risk", "Assumption+Risk"}
