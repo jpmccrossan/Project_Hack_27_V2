@@ -7,67 +7,44 @@ import streamlit as st
 import plotly.graph_objects as go
 from pathlib import Path
 
+_ROOT = str(Path(__file__).parent.parent)
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from utils.shared import (
+    BLUE, BLUE_DIM, BLUE_DARK, GOLD, BG, CARD_BG,
+    get_gbp_usd, db_query, inject_theme,
+)
+
 DB_PATH = Path(__file__).parent.parent / "Data" / "jet_engine_costs.db"
 
 st.set_page_config(page_title="Cost Dashboard", page_icon="📊", layout="wide")
-
-st.markdown("""
-<style>
-    .stApp { background-color: #06091A; color: #4FC3F7; }
-    section[data-testid="stSidebar"] { background-color: #080C1F; }
-    h1, h2, h3, h4 { color: #4FC3F7 !important; letter-spacing: 0.05em; }
+inject_theme("""
     [data-testid="metric-container"] {
         background-color: #0C1629; border: 1px solid #0D2040; border-radius: 6px; padding: 12px;
     }
     [data-testid="metric-container"] label { color: #1A8CBF !important; font-size: 0.75rem; }
-    [data-testid="metric-container"] [data-testid="stMetricValue"] { color: #4FC3F7 !important; font-size: 1.4rem; }
     .stSelectbox label, .stMultiSelect label { color: #1A8CBF !important; }
-    .stTabs [data-baseweb="tab-list"] { background-color: #080C1F; border-bottom: 1px solid #0D2040; }
-    .stTabs [data-baseweb="tab"] { color: #1A8CBF !important; }
-    .stTabs [aria-selected="true"] { color: #4FC3F7 !important; border-bottom: 2px solid #4FC3F7 !important; }
     .stDataFrame { border: 1px solid #0D2040 !important; }
     div[role="radiogroup"] label { color: #4FC3F7 !important; }
-</style>
-""", unsafe_allow_html=True)
+""")
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-BLUE = "#4FC3F7"; BLUE_DIM = "#1A8CBF"; BLUE_DARK = "#0D2040"
-GOLD = "#C4A44A"; BG = "#06091A"; PLOT_BG = "#0A0F25"; CARD_BG = "#0C1629"
+PLOT_BG = "#0A0F25"
 COLORS = ["#4FC3F7","#C4A44A","#60E4B8","#F06A9F","#8DA9FF","#F5A623","#7ED321","#9B59B6"]
 TIMEFRAMES = {"1M":"-1 month","3M":"-3 months","6M":"-6 months","1Y":"-1 year","2Y":"-2 years","5Y":"-5 years"}
 
 UK_NLW = {2019:8.21, 2020:8.72, 2021:8.91, 2022:9.50, 2023:10.42, 2024:11.44, 2025:12.21}
 
-# ── DB helpers ────────────────────────────────────────────────────────────────
-def get_con():
-    con = sqlite3.connect(DB_PATH, check_same_thread=False)
-    con.row_factory = sqlite3.Row
-    return con
-
-
+# ── DB helper (cached, dashboard-local for ttl=60) ────────────────────────────
 @st.cache_data(ttl=60)
 def q(sql: str, params: tuple = ()) -> pd.DataFrame:
-    con = get_con()
-    df = pd.read_sql_query(sql, con, params=params)
-    con.close()
-    return df
+    return db_query(sql, params)
 
 
 if not DB_PATH.exists():
     st.error("Database not found. Run: python API_Connection_Files/run_all.py")
     st.stop()
-
-# ── GBP conversion ────────────────────────────────────────────────────────────
-@st.cache_data(ttl=60)
-def get_gbp_usd() -> float:
-    try:
-        df = q("""SELECT ps.price FROM price_snapshots ps
-                  JOIN commodities c ON ps.commodity_id = c.id
-                  WHERE c.name = 'GBPUSD=X' ORDER BY ps.id DESC LIMIT 1""")
-        rate = float(df["price"].iloc[0])
-        return rate if rate > 0 else 1.27
-    except Exception:
-        return 1.27
 
 
 def usd_to_gbp(usd, rate: float):
@@ -333,46 +310,34 @@ def sparkline(names: list, gbp_rate: float) -> go.Figure:
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
-st.sidebar.markdown(
-    '<div style="color:{};font-size:1.1rem;font-weight:700;letter-spacing:0.08em;">✈ JET ENGINE COSTS</div>'.format(BLUE),
-    unsafe_allow_html=True,
-)
-st.sidebar.markdown("---")
-
-# ── Refresh row ───────────────────────────────────────────────────────────────
 try:
     last = q("SELECT MAX(fetched_at) AS ts FROM price_snapshots")["ts"].iloc[0]
-    last_fmt = pd.to_datetime(last).strftime("%d/%m/%Y %H:%M:%S") if last else "No data yet"
+    last_fmt = pd.to_datetime(last).strftime("%d/%m/%Y %H:%M") if last else "No data"
 except Exception:
-    last_fmt = "No data yet"
+    last_fmt = "No data"
 
 _RUN_ALL = Path(__file__).parent.parent / "API_Connection_Files" / "run_all.py"
-if st.sidebar.button("🔄 Refresh Data", use_container_width=True):
-    with st.spinner("Fetching live market data — this takes ~60s…"):
-        subprocess.run([sys.executable, str(_RUN_ALL)], check=False)
-    st.cache_data.clear()
-    st.rerun()
-st.sidebar.markdown(
-    "<div style='font-size:0.65rem;color:{};line-height:1.3;margin-top:-6px;margin-bottom:4px;'>"
-    "Last fetch: <b>{}</b></div>".format(BLUE_DIM, last_fmt),
-    unsafe_allow_html=True,
-)
+with st.sidebar:
+    if st.button("🔄 Refresh market data", use_container_width=True):
+        with st.spinner("Fetching live data — ~60s…"):
+            subprocess.run([sys.executable, str(_RUN_ALL)], check=False)
+        st.cache_data.clear()
+        st.rerun()
+    st.caption(f"Last fetch: {last_fmt}")
+    st.divider()
+    GBP_RATE = get_gbp_usd()
+    st.caption(f"GBP/USD  {GBP_RATE:.4f}  ·  Yahoo Finance / World Bank")
 
-st.sidebar.markdown("---")
-page = st.sidebar.radio(
-    "Section",
-    ["Overview", "Metals", "Energy", "Components", "FX & Macro", "Relationships"],
-    label_visibility="collapsed",
-)
-st.sidebar.markdown("---")
-GBP_RATE = get_gbp_usd()
-st.sidebar.caption("GBP/USD: {:.4f}  ·  Yahoo Finance · World Bank".format(GBP_RATE))
+# ── Page tabs (replaces sidebar radio) ───────────────────────────────────────
+_tab_overview, _tab_metals, _tab_energy, _tab_components, _tab_fx, _tab_rel = st.tabs([
+    "Overview", "Metals", "Energy", "Components", "FX & Macro", "Relationships"
+])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # OVERVIEW
 # ══════════════════════════════════════════════════════════════════════════════
-if page == "Overview":
+with _tab_overview:
     st.markdown(
         "<div style='background:linear-gradient(135deg,#06091A 0%,#0C1629 60%,#00205B 100%);"
         "border:1px solid {};border-radius:10px;padding:24px 32px;margin-bottom:24px;'>"
@@ -422,20 +387,22 @@ if page == "Overview":
         if df.empty: return "—"
         return df.sort_values("change_pct", ascending=False).iloc[0]["name"]
 
-    def _card_header(icon, label, headline, sub, level, color):
+    def _card_header(icon, label, metric_label, headline, sub, level, color):
         return (
             "<div style='background:{bg};border:2px solid {c};border-radius:10px;"
             "padding:16px 18px 10px;'>"
             "<div style='font-size:0.65rem;color:{c};text-transform:uppercase;"
             "letter-spacing:0.12em;margin-bottom:6px;'>{icon} {label}</div>"
+            "<div style='font-size:0.6rem;color:{dim};text-transform:uppercase;"
+            "letter-spacing:0.08em;margin-bottom:3px;'>{metric_label}</div>"
             "<div style='font-size:1.7rem;font-weight:700;color:#FFFFFF;"
             "line-height:1.1;'>{headline}</div>"
-            "<div style='font-size:0.7rem;color:{dim};margin-top:4px;'>{sub}</div>"
+            "<div style='font-size:0.7rem;color:{dim};margin-top:5px;'>{sub}</div>"
             "<div style='display:inline-block;font-size:0.6rem;color:{c};"
             "border:1px solid {c};border-radius:4px;padding:2px 6px;margin-top:8px;"
             "text-transform:uppercase;letter-spacing:0.08em;'>{level}</div>"
             "</div>"
-        ).format(bg=CARD_BG, c=color, icon=icon, label=label,
+        ).format(bg=CARD_BG, c=color, icon=icon, label=label, metric_label=metric_label,
                  headline=headline, sub=sub, dim=BLUE_DIM, level=level)
 
     col_m, col_e, col_f, col_mac = st.columns(4, gap="small")
@@ -449,7 +416,7 @@ if page == "Overview":
         m_count = len(metals)
         headline = "{:+.1f}%".format(m_avg) if m_avg is not None else "N/A"
         sub = "{} metals · Highest: {}".format(m_count, m_top)
-        st.markdown(_card_header("⬡", "Metals", headline, sub, m_level, m_color),
+        st.markdown(_card_header("⬡", "Metals", "Avg 1Y price change", headline, sub, m_level, m_color),
                     unsafe_allow_html=True)
         if not metals.empty:
             st.plotly_chart(sparkline(metals["name"].tolist()[:6], GBP_RATE),
@@ -464,7 +431,7 @@ if page == "Overview":
         e_count = len(energy)
         headline = "{:+.1f}%".format(e_avg) if e_avg is not None else "N/A"
         sub = "{} commodities · Highest: {}".format(e_count, e_top)
-        st.markdown(_card_header("⚡", "Energy", headline, sub, e_level, e_color),
+        st.markdown(_card_header("⚡", "Energy", "Avg 1Y price change", headline, sub, e_level, e_color),
                     unsafe_allow_html=True)
         if not energy.empty:
             st.plotly_chart(sparkline(energy["name"].tolist()[:4], GBP_RATE),
@@ -489,7 +456,7 @@ if page == "Overview":
             f_level = "Unknown"
         f_color = JIC_COLORS[f_level]
         headline = "{:.4f}".format(gbpusd_val)
-        st.markdown(_card_header("💱", "FX Rates  (GBP/USD)", headline, sub, f_level, f_color),
+        st.markdown(_card_header("💱", "FX Rates  (GBP/USD)", "Live GBP/USD rate", headline, sub, f_level, f_color),
                     unsafe_allow_html=True)
         if not fx.empty:
             st.plotly_chart(sparkline(fx["name"].tolist()[:4], 1.0),
@@ -509,8 +476,8 @@ if page == "Overview":
         headline   = "{:.1f}%".format(cpi_val) if cpi_val is not None else "N/A"
         gdp_str    = "GDP {:+.1f}%".format(gdp_val)  if gdp_val  is not None else ""
         unem_str   = "  Unem {:.1f}%".format(unem_val) if unem_val is not None else ""
-        sub        = "UK CPI inflation · {}{}".format(gdp_str, unem_str)
-        st.markdown(_card_header("📊", "UK Macro", headline, sub, mac_level, mac_color),
+        sub        = "{}{}".format(gdp_str, unem_str).strip(" · ")
+        st.markdown(_card_header("📊", "UK Macro", "UK CPI inflation", headline, sub, mac_level, mac_color),
                     unsafe_allow_html=True)
         # Mini macro value grid instead of sparkline
         mac_items = []
@@ -551,12 +518,57 @@ if page == "Overview":
 # ══════════════════════════════════════════════════════════════════════════════
 # METALS
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "Metals":
+with _tab_metals:
     st.markdown("# Metals")
     st.caption("Prices converted from USD to GBP at £1 = ${:.4f}".format(GBP_RATE))
 
-    section("⚠", "Metals Risk — 1 Year Price Change")
     metals_risk = fetch_commodity_risk("metal")
+
+    # ── Latest price cards ────────────────────────────────────────────────────
+    section("💰", "Latest Prices")
+    _m_snap = q("""
+        SELECT c.name, c.unit, ps.price AS usd_price
+        FROM price_snapshots ps
+        JOIN commodities c ON ps.commodity_id = c.id
+        WHERE c.category_id = (SELECT id FROM categories WHERE name = 'metal')
+          AND ps.id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
+        ORDER BY c.name
+    """)
+    _m_risk_map = (
+        {r["name"]: {"change_pct": r["change_pct"], "risk_level": r["risk_level"]}
+         for _, r in metals_risk.iterrows()}
+        if not metals_risk.empty else {}
+    )
+    _m_cards = []
+    for _, row in _m_snap.iterrows():
+        gbp     = row["usd_price"] / GBP_RATE if row["usd_price"] else None
+        risk    = _m_risk_map.get(row["name"], {})
+        pct     = risk.get("change_pct", None)
+        level   = risk.get("risk_level", "Unknown") if risk else "Unknown"
+        color   = JIC_COLORS.get(level, "#333355")
+        chg_str = "{:+.1f}% vs 1Y ago".format(pct) if pct is not None and not pd.isna(pct) else "No 1Y data"
+        price_str = "£{:,.2f}".format(gbp) if gbp else "N/A"
+        _m_cards.append((row["name"], price_str, chg_str, row["unit"], level, color))
+
+    for _row_start in range(0, len(_m_cards), 4):
+        _row_items = _m_cards[_row_start:_row_start + 4]
+        _cols = st.columns(len(_row_items))
+        for _col, (name, price, chg, unit, level, color) in zip(_cols, _row_items):
+            _col.markdown(
+                "<div style='background:{bg};border:2px solid {c};border-radius:8px;"
+                "padding:14px 16px;margin-bottom:8px;'>"
+                "<div style='font-size:0.6rem;color:{c};text-transform:uppercase;"
+                "letter-spacing:0.1em;margin-bottom:4px;'>{level}</div>"
+                "<div style='font-size:1.3rem;font-weight:700;color:#FFFFFF;'>{price}</div>"
+                "<div style='font-size:0.78rem;color:{dim};margin-top:2px;'>{name}</div>"
+                "<div style='font-size:0.65rem;color:#555577;margin-top:2px;'>{chg} · {unit}</div>"
+                "</div>".format(bg=CARD_BG, c=color, dim=BLUE_DIM,
+                                level=level, price=price, name=name, chg=chg, unit=unit),
+                unsafe_allow_html=True,
+            )
+    st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+
+    section("⚠", "Metals Risk — 1 Year Price Change")
     jic_risk_panel(metals_risk, "Metals — 1Y Price Change (JIC Rated)")
 
     section("📈", "Price History")
@@ -606,12 +618,57 @@ elif page == "Metals":
 # ══════════════════════════════════════════════════════════════════════════════
 # ENERGY
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "Energy":
+with _tab_energy:
     st.markdown("# Energy")
     st.caption("Prices converted from USD to GBP at £1 = ${:.4f}".format(GBP_RATE))
 
-    section("⚠", "Energy Risk — 1 Year Price Change")
     energy_risk = fetch_commodity_risk("energy")
+
+    # ── Latest price cards ────────────────────────────────────────────────────
+    section("💰", "Latest Prices")
+    _e_snap = q("""
+        SELECT c.name, c.unit, ps.price AS usd_price
+        FROM price_snapshots ps
+        JOIN commodities c ON ps.commodity_id = c.id
+        WHERE c.category_id = (SELECT id FROM categories WHERE name = 'energy')
+          AND ps.id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
+        ORDER BY c.name
+    """)
+    _e_risk_map = (
+        {r["name"]: {"change_pct": r["change_pct"], "risk_level": r["risk_level"]}
+         for _, r in energy_risk.iterrows()}
+        if not energy_risk.empty else {}
+    )
+    _e_cards = []
+    for _, row in _e_snap.iterrows():
+        gbp     = row["usd_price"] / GBP_RATE if row["usd_price"] else None
+        risk    = _e_risk_map.get(row["name"], {})
+        pct     = risk.get("change_pct", None)
+        level   = risk.get("risk_level", "Unknown") if risk else "Unknown"
+        color   = JIC_COLORS.get(level, "#333355")
+        chg_str = "{:+.1f}% vs 1Y ago".format(pct) if pct is not None and not pd.isna(pct) else "No 1Y data"
+        price_str = "£{:,.2f}".format(gbp) if gbp else "N/A"
+        _e_cards.append((row["name"], price_str, chg_str, row["unit"], level, color))
+
+    for _row_start in range(0, len(_e_cards), 3):
+        _row_items = _e_cards[_row_start:_row_start + 3]
+        _cols = st.columns(len(_row_items))
+        for _col, (name, price, chg, unit, level, color) in zip(_cols, _row_items):
+            _col.markdown(
+                "<div style='background:{bg};border:2px solid {c};border-radius:8px;"
+                "padding:14px 16px;margin-bottom:8px;'>"
+                "<div style='font-size:0.6rem;color:{c};text-transform:uppercase;"
+                "letter-spacing:0.1em;margin-bottom:4px;'>{level}</div>"
+                "<div style='font-size:1.3rem;font-weight:700;color:#FFFFFF;'>{price}</div>"
+                "<div style='font-size:0.78rem;color:{dim};margin-top:2px;'>{name}</div>"
+                "<div style='font-size:0.65rem;color:#555577;margin-top:2px;'>{chg} · {unit}</div>"
+                "</div>".format(bg=CARD_BG, c=color, dim=BLUE_DIM,
+                                level=level, price=price, name=name, chg=chg, unit=unit),
+                unsafe_allow_html=True,
+            )
+    st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+
+    section("⚠", "Energy Risk — 1 Year Price Change")
     jic_risk_panel(energy_risk, "Energy — 1Y Price Change (JIC Rated)")
 
     section("📈", "Price History")
@@ -668,7 +725,7 @@ elif page == "Energy":
 # ══════════════════════════════════════════════════════════════════════════════
 # COMPONENTS
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "Components":
+with _tab_components:
     st.markdown("# Engine Components at Risk")
     st.caption("Risk score = average 1-year price change across a component's raw materials. "
                "Classification uses UK Joint Intelligence Committee probability language.")
@@ -805,7 +862,7 @@ elif page == "Components":
 # ══════════════════════════════════════════════════════════════════════════════
 # FX & MACRO  (includes UK Economic Climate + 12M Projections)
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "FX & Macro":
+with _tab_fx:
     st.markdown("# FX & Macroeconomic Intelligence")
 
     # ── UK Economic Climate ───────────────────────────────────────────────────
@@ -1014,7 +1071,7 @@ elif page == "FX & Macro":
 # ══════════════════════════════════════════════════════════════════════════════
 # RELATIONSHIPS
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "Relationships":
+with _tab_rel:
     st.markdown("# Price Relationships")
     st.caption("Economic linkages between commodities and macro indicators.")
 

@@ -1,0 +1,8 @@
+[client]
+showErrorDetails = true
+
+[browser]
+gatherUsageStats = false
+
+[runner]
+fastReruns = true

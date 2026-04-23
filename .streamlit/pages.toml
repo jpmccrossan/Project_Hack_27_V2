@@ -1,0 +1,29 @@
+[[pages]]
+path = "app.py"
+name = "Home"
+icon = "✈"
+
+[[pages]]
+path = "pages/0_🎯_Deliverability.py"
+name = "Deliverability"
+icon = "🎯"
+
+[[pages]]
+path = "pages/1_📋_Assumptions.py"
+name = "Assumptions"
+icon = "📋"
+
+[[pages]]
+path = "pages/2_📊_Cost_Dashboard.py"
+name = "Market Costs"
+icon = "📊"
+
+[[pages]]
+path = "pages/3_💬_LLM_Data_Chat.py"
+name = "AI Chat"
+icon = "💬"
+
+[[pages]]
+path = "pages/4_📖_Technical_Docs.py"
+name = "Technical Docs"
+icon = "📖"
