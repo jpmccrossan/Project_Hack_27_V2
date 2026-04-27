@@ -25,16 +25,30 @@ AI_COLUMNS = [
 
 
 def ensure_ai_columns() -> None:
-    """Add AI columns to both assumptions and assumption_tracker tables if missing."""
+    """Add AI columns to both assumptions and assumption_tracker tables if missing.
+
+    Safe to call repeatedly. On fresh installs the columns are created by
+    db_setup.py / init_tracker_tables(); this is the migration path for older
+    databases. Each ALTER is wrapped individually so a duplicate-column error
+    on one column never skips the others.
+    """
     con = sqlite3.connect(DB_PATH)
     for table in ("assumptions", "assumption_tracker"):
+        # Skip cleanly if the table itself doesn't exist yet
         try:
             existing = {row[1] for row in con.execute(f"PRAGMA table_info({table})").fetchall()}
-            for col_name, col_type in AI_COLUMNS:
-                if col_name not in existing:
-                    con.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type}")
-        except Exception:
-            pass
+        except sqlite3.Error:
+            continue
+        if not existing:
+            continue
+        for col_name, col_type in AI_COLUMNS:
+            if col_name in existing:
+                continue
+            try:
+                con.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_type}")
+            except sqlite3.OperationalError:
+                # Race / duplicate column — already added by another process.
+                pass
     con.commit()
     con.close()
 

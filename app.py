@@ -49,7 +49,7 @@ PAGES = [
             "market drift, and composite deliverability. Log confidence reviews by role."
         ),
         "sub": "C Suite · Project Managers · Portfolio view",
-        "file": "pages/0_🎯_Deliverability.py",
+        "file": "pages/0_Deliverability.py",
         "label": "Open Deliverability →",
         "color": GREEN,
     },
@@ -61,7 +61,7 @@ PAGES = [
             "Internal deliverability tracker (ASXXX items) with confidence, audit trail, and AI assessment."
         ),
         "sub": "External · Internal · AI Assessment",
-        "file": "pages/1_📋_Assumptions.py",
+        "file": "pages/1_Assumptions.py",
         "label": "Open Assumptions Register →",
         "color": AMBER,
     },
@@ -73,7 +73,7 @@ PAGES = [
             "JIC risk ratings, trend charts, component exposure analysis, and economic relationships."
         ),
         "sub": "Metals · Energy · Components · FX & Macro",
-        "file": "pages/2_📊_Cost_Dashboard.py",
+        "file": "pages/2_Cost_Dashboard.py",
         "label": "Open Cost Dashboard →",
         "color": BLUE,
     },
@@ -85,7 +85,7 @@ PAGES = [
             "The AI writes its own SQL queries, fetches live data, and reasons from real numbers."
         ),
         "sub": "Powered by Ollama · Local inference · No data leaves your machine",
-        "file": "pages/3_💬_LLM_Data_Chat.py",
+        "file": "pages/3_LLM_Data_Chat.py",
         "label": "Open AI Chat →",
         "color": "#9C7AE8",
     },
@@ -162,15 +162,15 @@ st.markdown(
 )
 
 SHORTCUTS = [
-    ("🎯 Portfolio overview",         "pages/0_🎯_Deliverability.py"),
-    ("✏️ Log a confidence review",     "pages/0_🎯_Deliverability.py"),
-    ("🌍 External market costs",       "pages/1_📋_Assumptions.py"),
-    ("🏢 Internal tracker",            "pages/1_📋_Assumptions.py"),
-    ("🤖 AI risk assessment",          "pages/1_📋_Assumptions.py"),
-    ("📈 Metals prices",               "pages/2_📊_Cost_Dashboard.py"),
-    ("⚡ Energy prices",               "pages/2_📊_Cost_Dashboard.py"),
-    ("💹 FX & macro",                  "pages/2_📊_Cost_Dashboard.py"),
-    ("💬 Ask the AI a question",       "pages/3_💬_LLM_Data_Chat.py"),
+    ("🎯 Portfolio overview",         "pages/0_Deliverability.py"),
+    ("✏️ Log a confidence review",     "pages/0_Deliverability.py"),
+    ("🌍 External market costs",       "pages/1_Assumptions.py"),
+    ("🏢 Internal tracker",            "pages/1_Assumptions.py"),
+    ("🤖 AI risk assessment",          "pages/1_Assumptions.py"),
+    ("📈 Metals prices",               "pages/2_Cost_Dashboard.py"),
+    ("⚡ Energy prices",               "pages/2_Cost_Dashboard.py"),
+    ("💹 FX & macro",                  "pages/2_Cost_Dashboard.py"),
+    ("💬 Ask the AI a question",       "pages/3_LLM_Data_Chat.py"),
 ]
 
 sc_cols = st.columns(3)

@@ -4,26 +4,26 @@ name = "Home"
 icon = "✈"
 
 [[pages]]
-path = "pages/0_🎯_Deliverability.py"
+path = "pages/0_Deliverability.py"
 name = "Deliverability"
 icon = "🎯"
 
 [[pages]]
-path = "pages/1_📋_Assumptions.py"
+path = "pages/1_Assumptions.py"
 name = "Assumptions"
 icon = "📋"
 
 [[pages]]
-path = "pages/2_📊_Cost_Dashboard.py"
+path = "pages/2_Cost_Dashboard.py"
 name = "Market Costs"
 icon = "📊"
 
 [[pages]]
-path = "pages/3_💬_LLM_Data_Chat.py"
+path = "pages/3_LLM_Data_Chat.py"
 name = "AI Chat"
 icon = "💬"
 
 [[pages]]
-path = "pages/4_📖_Technical_Docs.py"
+path = "pages/4_Technical_Docs.py"
 name = "Technical Docs"
 icon = "📖"

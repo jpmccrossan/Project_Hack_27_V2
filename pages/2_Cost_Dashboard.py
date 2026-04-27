@@ -312,8 +312,9 @@ def sparkline(names: list, gbp_rate: float) -> go.Figure:
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 import time as _time
 
-_RUN_ALL    = Path(__file__).parent.parent / "API_Connection_Files" / "run_all.py"
-_FETCH_LIVE = Path(__file__).parent.parent / "API_Connection_Files" / "fetch_live.py"
+_APP_DIR    = Path(__file__).parent.parent
+_RUN_ALL    = _APP_DIR / "API_Connection_Files" / "run_all.py"
+_FETCH_LIVE = _APP_DIR / "API_Connection_Files" / "fetch_live.py"
 _INTERVALS  = {"30s": 30, "1 min": 60, "5 min": 300, "15 min": 900}
 
 # Sidebar controls — always visible, never blocked
@@ -331,7 +332,10 @@ with st.sidebar:
     else:
         if st.button("🔄 Refresh market data", use_container_width=True):
             with st.spinner("Fetching live data — ~60s…"):
-                subprocess.run([sys.executable, str(_RUN_ALL)], check=False)
+                subprocess.run(
+                    [sys.executable, str(_RUN_ALL)],
+                    cwd=str(_APP_DIR), check=False,
+                )
             st.cache_data.clear()
             st.session_state.pop("_last_live_refresh", None)
             st.rerun()
@@ -358,7 +362,10 @@ def _do_fetch_in_background():
     if not _FETCH_LOCK.acquire(blocking=False):
         return  # a fetch is already running
     try:
-        subprocess.run([sys.executable, str(_FETCH_LIVE)], capture_output=True, timeout=120)
+        subprocess.run(
+            [sys.executable, str(_FETCH_LIVE)],
+            cwd=str(_APP_DIR), capture_output=True, timeout=120,
+        )
         st.session_state["_last_live_refresh"] = _time.time()
         st.session_state["_fetching"] = False
     finally:

@@ -40,7 +40,11 @@ def init_tracker_tables() -> None:
             dependencies TEXT,
             status TEXT DEFAULT 'Open',
             created_at TEXT,
-            updated_at TEXT
+            updated_at TEXT,
+            ai_classification TEXT,
+            ai_risk_level TEXT,
+            ai_rationale TEXT,
+            ai_assessed_at TEXT
         )
     """)
     c.execute("""

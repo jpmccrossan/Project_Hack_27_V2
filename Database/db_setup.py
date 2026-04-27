@@ -115,24 +115,93 @@ CREATE TABLE IF NOT EXISTS macro_commodity_relationships (
     notes                TEXT
 );
 
+-- ── Projects ──────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS projects (
+    project_id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_name          TEXT NOT NULL UNIQUE,
+    customer_name         TEXT,
+    budget_gbp            REAL DEFAULT 0,
+    budget_threshold_pct  REAL DEFAULT 10,
+    confidence_score      INTEGER DEFAULT 70,
+    status                TEXT DEFAULT 'Active',
+    description           TEXT,
+    created_at            TEXT,
+    updated_at            TEXT
+);
+
+CREATE TABLE IF NOT EXISTS project_audit_log (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id    INTEGER NOT NULL REFERENCES projects(project_id),
+    timestamp     TEXT NOT NULL,
+    field_name    TEXT NOT NULL,
+    old_value     TEXT,
+    new_value     TEXT,
+    user          TEXT DEFAULT 'system',
+    change_reason TEXT
+);
+
 -- ── HPO Assumptions register ──────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS assumptions (
-    assumption_id   INTEGER PRIMARY KEY,
-    project_id      INTEGER,
-    project_name    TEXT,
-    category        TEXT,
-    assumption_type TEXT,
-    location        TEXT,
-    assumption      TEXT,
-    ticker          TEXT,
-    event_date      TEXT,
-    price_per_unit  REAL,
-    currency        TEXT,
-    unit            TEXT,
-    qty             REAL,
-    total_cost      REAL,
-    updated_at      TEXT
+    assumption_id      INTEGER PRIMARY KEY,
+    project_id         INTEGER,
+    project_name       TEXT,
+    category           TEXT,
+    assumption_type    TEXT,
+    location           TEXT,
+    assumption         TEXT,
+    ticker             TEXT,
+    event_date         TEXT,
+    price_per_unit     REAL,
+    currency           TEXT,
+    unit               TEXT,
+    qty                REAL,
+    total_cost         REAL,
+    updated_at         TEXT,
+    ai_classification  TEXT,
+    ai_risk_level      TEXT,
+    ai_rationale       TEXT,
+    ai_assessed_at     TEXT
+);
+
+-- ── Assumption tracker & audit ────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS assumption_tracker (
+    assumption_id         TEXT PRIMARY KEY,
+    project_name          TEXT,
+    title                 TEXT NOT NULL,
+    category              TEXT NOT NULL,
+    owner                 TEXT NOT NULL,
+    description           TEXT,
+    baseline_value        REAL,
+    current_value         REAL,
+    unit                  TEXT,
+    internal_drift_pct    REAL DEFAULT 0,
+    external_drift_pct    REAL DEFAULT 0,
+    confidence_score      INTEGER DEFAULT 50,
+    last_review_date      TEXT,
+    review_interval_days  INTEGER DEFAULT 30,
+    dependencies          TEXT,
+    status                TEXT DEFAULT 'Open',
+    created_at            TEXT,
+    updated_at            TEXT,
+    ai_classification     TEXT,
+    ai_risk_level         TEXT,
+    ai_rationale          TEXT,
+    ai_assessed_at        TEXT
+);
+
+CREATE TABLE IF NOT EXISTS assumption_audit_log (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp     TEXT NOT NULL,
+    assumption_id TEXT NOT NULL,
+    action        TEXT NOT NULL,
+    field_name    TEXT,
+    old_value     TEXT,
+    new_value     TEXT,
+    user          TEXT DEFAULT 'system',
+    change_reason TEXT
 );
 
 -- ── Jet engine context ────────────────────────────────────────────────────────
@@ -318,12 +387,35 @@ def get_id(cur, table: str, name: str) -> int:
     return row[0]
 
 
+# (project_name, customer_name, budget_gbp, budget_threshold_pct, confidence_score, status, description)
+PROJECTS = [
+    ("Engine Casing",          "Henry Royce",       50000,  10.0, 49, "Active",  "Structural outer casing fabrication and assembly"),
+    ("Fan blade manufacturing","Charles Rolls",      43000,  12.0, 68, "Active",  "Titanium fan blade manufacture and balancing"),
+    ("Compressor assembly",    "Frank Whittle",      72000,   8.0, 75, "Active",  "Multi-stage compressor build and testing"),
+    ("Chamber fabrication",    "Merlin A",          145000,  10.0, 81, "Monitor", "Combustion chamber high-temp alloy fabrication"),
+    ("Turbine manufacturing",  "B Lancaster",       160000,  15.0, 60, "Active",  "Turbine blade casting, coating, and assembly"),
+    ("Nozzle assembly",        "Hurricane Higgins",  80000,  10.0, 80, "Active",  "Exhaust nozzle precision machining and fit"),
+    ("Bearing assembly",       "Victor Vulcan",      52000,   8.0, 77, "Active",  "High-speed bearing manufacture and quality control"),
+    ("Fuel system components", "Avro Spencer",       84000,  12.0, 71, "Active",  "Fuel delivery system components and sealing"),
+]
+
+
 def seed(cur: sqlite3.Cursor) -> None:
     cur.executemany("INSERT OR IGNORE INTO sources (name, api_url, requires_key) VALUES (?,?,?)", SOURCES)
     cur.executemany("INSERT OR IGNORE INTO categories (name, description) VALUES (?,?)", CATEGORIES)
     cur.executemany("INSERT OR IGNORE INTO relationship_types (name, description, direction) VALUES (?,?,?)", RELATIONSHIP_TYPES)
     cur.executemany("INSERT OR IGNORE INTO countries (name, iso2) VALUES (?,?)", COUNTRIES)
     cur.executemany("INSERT OR IGNORE INTO jet_engine_components (name, description) VALUES (?,?)", JET_ENGINE_COMPONENTS)
+
+    from datetime import datetime as _dt
+    _now = _dt.now().isoformat()
+    for name, customer, budget, threshold, confidence, status, description in PROJECTS:
+        cur.execute(
+            "INSERT OR IGNORE INTO projects "
+            "(project_name, customer_name, budget_gbp, budget_threshold_pct, confidence_score, status, description, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (name, customer, budget, threshold, confidence, status, description, _now, _now),
+        )
 
     for name, cat, ticker, unit, source, notes in COMMODITIES:
         cat_id = get_id(cur, "categories", cat)

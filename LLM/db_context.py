@@ -138,7 +138,7 @@ assumption_audit_log (timestamp, assumption_id, field_name, old_value, new_value
 macro_data (country_id, indicator_id, value, year)
 countries (id, name) — UK=1, US=2, Australia=3, Canada=4, Japan=5, Germany=6, France=7, China=8
 macro_indicators (id, name) — CPI=1, GDP Growth=2, Unemployment=3, Lending Rate=4, Real Interest=5
-component_materials (component_id, commodity_id, weight)
+component_materials (component_id, commodity_id, notes)
 jet_engine_components (id, name) — query: SELECT id,name FROM jet_engine_components""")
 
     return "\n".join(lines)

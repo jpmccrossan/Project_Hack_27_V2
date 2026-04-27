@@ -70,13 +70,19 @@ if not DB_PATH.exists():
 # ── Auto-start Ollama if not running ─────────────────────────────────────────
 def _try_start_ollama():
     """Attempt to launch `ollama serve` as a background process."""
+    # Detach the child so closing Streamlit doesn't take Ollama down.
+    # Windows and Unix use different mechanisms for this.
+    popen_kwargs = {
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if sys.platform == "win32":
+        popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+    else:
+        popen_kwargs["start_new_session"] = True
+
     try:
-        subprocess.Popen(
-            ["ollama", "serve"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            start_new_session=True,
-        )
+        subprocess.Popen(["ollama", "serve"], **popen_kwargs)
         # Give it a moment to bind the port
         for _ in range(8):
             time.sleep(0.5)
@@ -172,7 +178,7 @@ st.sidebar.markdown(
     "<div style='font-size:0.65rem;color:#333355;margin-top:8px;'>"
     "All inference is local via Ollama.<br>No data leaves your machine.<br><br>"
     "<b>To remove this feature:</b><br>"
-    "Delete <code>pages/3_💬_LLM_Data_Chat.py</code><br>"
+    "Delete <code>pages/3_LLM_Data_Chat.py</code><br>"
     "and the <code>LLM/</code> folder."
     "</div>",
     unsafe_allow_html=True,
@@ -398,34 +404,55 @@ else:
 
         with st.chat_message("assistant"):
             _ph = st.empty()
-            _ph.markdown(
-                "<div style='color:{d};font-size:0.85rem;'>"
-                "<span style='animation:pulse 1s infinite;'>⬡</span>&nbsp; Thinking…</div>"
-                "<style>@keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:0.3}}}}</style>"
-                .format(d=BLUE_DIM), unsafe_allow_html=True
-            )
 
-            # Round 1 — stream so user sees tokens arrive
-            _round1 = _stream_to(_ph, _model, _msgs)
-            _msgs   = _msgs + [{"role": "assistant", "content": _round1}]
-            _final  = _round1
+            def _thinking(msg="Thinking…"):
+                _ph.markdown(
+                    "<div style='color:{d};font-size:0.85rem;'>"
+                    "<span style='animation:pulse 1s infinite;'>⬡</span>&nbsp; {m}</div>"
+                    "<style>@keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:0.3}}}}</style>"
+                    .format(d=BLUE_DIM, m=msg), unsafe_allow_html=True
+                )
 
-            # If model wrote SQL, execute it and get a final answer
-            for _ in range(_MAX_ROUNDS - 1):
-                _sqls = _extract_sql(_final)
+            _thinking()
+
+            # All rounds run silently via chat_complete so SQL never appears.
+            # Once the model returns a response with no SQL it's the final answer
+            # — stream it so the user sees tokens arriving.
+            _final = ""
+            for _rnd in range(_MAX_ROUNDS):
+                _reply = chat_complete(_model, _msgs)
+                _sqls  = _extract_sql(_reply)
+
                 if not _sqls:
+                    # No SQL — stream the answer live
+                    _ph.empty()
+                    _final = _stream_to(_ph, _model, _msgs)
                     break
+
+                # Has SQL — execute silently and loop
+                _msgs = _msgs + [{"role": "assistant", "content": _reply}]
+                _thinking("Querying data ({} SQL so far)…".format(
+                    sum(len(_extract_sql(m["content"]))
+                        for m in _msgs if m["role"] == "assistant")
+                ))
                 _parts = []
                 for _sql in _sqls:
-                    _parts.append("Query:\n{}\n\nResult:\n{}".format(_sql, execute_sql(_sql)))
+                    _parts.append("Query:\n{}\n\nResult:\n{}".format(
+                        _sql, execute_sql(_sql)
+                    ))
                 _msgs = _msgs + [{
                     "role": "user",
-                    "content": "Results:\n\n{}\n\nAnswer the question. No SQL.".format(
-                        "\n\n---\n\n".join(_parts)
-                    ),
+                    "content": (
+                        "Results:\n\n{}\n\n"
+                        "Now answer the original question in plain text. "
+                        "Do not write any SQL code blocks."
+                    ).format("\n\n---\n\n".join(_parts)),
                 }]
-                _final = _stream_to(_ph, _model, _msgs)
-                _msgs  = _msgs + [{"role": "assistant", "content": _final}]
+            else:
+                # Hit max rounds — show whatever we have
+                _ph.empty()
+                _final = _SQL_RE.sub("", _reply).strip()
+                _ph.markdown(_final)
 
             st.session_state.llm_messages.append(
                 {"role": "assistant", "content": _SQL_RE.sub("", _final).strip()}
