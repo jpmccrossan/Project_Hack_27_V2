@@ -146,49 +146,95 @@ def load_macro_data(cur, data: dict) -> int:
 
 # ── Load assumptions CSV ──────────────────────────────────────────────────────
 
-def load_assumptions_csv(cur) -> int:
+def load_assumptions_csv(cur) -> tuple:
+    """Load HPO_Assumptions_data.csv into both assumptions (external) and
+    assumption_tracker (internal) tables. Returns (ext_count, int_count)."""
     import csv
     csv_path = Path(__file__).parent.parent / "Data" / "CSV" / "HPO_Assumptions_data.csv"
     if not csv_path.exists():
         print("  WARNING: HPO_Assumptions_data.csv not found in Data/CSV/")
-        return 0
+        return 0, 0
 
     def to_float(v):
         try:
-            return float(v) if v not in (None, "") else None
+            return float(v) if v not in (None, "", "nan") else None
         except (ValueError, TypeError):
             return None
 
-    count = 0
+    def to_int(v):
+        try:
+            return int(float(v)) if v not in (None, "", "nan") else None
+        except (ValueError, TypeError):
+            return None
+
+    ext_count = 0
+    int_count = 0
     ts = datetime.now().isoformat()
+
     with open(csv_path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
-            cur.execute(
-                """INSERT OR REPLACE INTO assumptions
-                       (assumption_id, project_id, project_name, category, assumption_type,
-                        location, assumption, ticker, event_date, price_per_unit, currency,
-                        unit, qty, total_cost, updated_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (
-                    int(row["assumption_id"]),
-                    int(row["project_id"]) if row.get("project_id") else None,
-                    row.get("project_name", ""),
-                    row.get("category", ""),
-                    row.get("assumption_type", ""),
-                    row.get("location", ""),
-                    row.get("assumption", ""),
-                    row.get("ticker", ""),
-                    row.get("event_date", ""),
-                    to_float(row.get("price_per_unit")),
-                    row.get("currency", ""),
-                    row.get("unit", ""),
-                    to_float(row.get("qty")),
-                    to_float(row.get("total_cost")),
-                    ts,
-                ),
-            )
-            count += 1
-    return count
+            scope = row.get("assumption_scope", "external").strip().lower()
+
+            if scope == "external":
+                cur.execute(
+                    """INSERT OR REPLACE INTO assumptions
+                           (assumption_id, project_id, project_name, category, assumption_type,
+                            location, assumption, ticker, event_date, price_per_unit, currency,
+                            unit, qty, total_cost, updated_at)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        to_int(row["assumption_id"]),
+                        to_int(row.get("project_id")),
+                        row.get("project_name", ""),
+                        row.get("category", ""),
+                        row.get("assumption_type", ""),
+                        row.get("location", ""),
+                        row.get("assumption", ""),
+                        row.get("ticker", ""),
+                        row.get("event_date", ""),
+                        to_float(row.get("price_per_unit")),
+                        row.get("currency", ""),
+                        row.get("unit", ""),
+                        to_float(row.get("qty")),
+                        to_float(row.get("total_cost")),
+                        ts,
+                    ),
+                )
+                ext_count += 1
+
+            elif scope == "internal":
+                # INSERT OR IGNORE — preserves live UI updates; only seeds on first run
+                cur.execute(
+                    """INSERT OR IGNORE INTO assumption_tracker
+                           (assumption_id, project_name, title, category, owner, description,
+                            baseline_value, current_value, unit, internal_drift_pct, external_drift_pct,
+                            confidence_score, last_review_date, review_interval_days,
+                            dependencies, status, created_at, updated_at)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (
+                        row["assumption_id"].strip(),
+                        row.get("project_name", ""),
+                        row.get("title", ""),
+                        row.get("category", ""),
+                        row.get("owner", ""),
+                        row.get("description", ""),
+                        to_float(row.get("baseline_value")),
+                        to_float(row.get("current_value")),
+                        row.get("unit_internal", "") or row.get("unit", ""),
+                        to_float(row.get("internal_drift_pct")) or 0.0,
+                        to_float(row.get("external_drift_pct")) or 0.0,
+                        to_int(row.get("confidence_score")) or 50,
+                        row.get("last_review_date", "") or ts[:10],
+                        to_int(row.get("review_interval_days")) or 30,
+                        row.get("dependencies", ""),
+                        row.get("status", "Open"),
+                        ts,
+                        ts,
+                    ),
+                )
+                int_count += 1
+
+    return ext_count, int_count
 
 
 # ── Master loader ─────────────────────────────────────────────────────────────
@@ -221,7 +267,9 @@ def load_all():
     n = load_energy_history(cur, energy_hist);    print(f"  Energy history:        {n} rows")
     n = load_fx_history(cur, finance_hist);       print(f"  FX history:            {n} rows")
     n = load_macro_data(cur, finance_hist);       print(f"  Macro (annual):        {n} rows")
-    n = load_assumptions_csv(cur);                print(f"  Assumptions:           {n} rows")
+    ext, int_ = load_assumptions_csv(cur)
+    print(f"  Assumptions (ext):     {ext} rows")
+    print(f"  Assumptions (int):     {int_} rows")
 
     con.commit()
     con.close()
