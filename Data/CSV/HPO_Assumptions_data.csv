@@ -1,0 +1,129 @@
+assumption_scope,assumption_id,project_id,project_name,category,assumption_type,location,assumption,ticker,event_date,price_per_unit,currency,unit,qty,total_cost,title,owner,description,baseline_value,current_value,unit_internal,internal_drift_pct,external_drift_pct,confidence_score,last_review_date,review_interval_days,dependencies,status
+external,1,1,Engine Casing,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,2,1,Engine Casing,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,3,1,Engine Casing,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,24688.0,31354.0,,,,,,,,,,,,,
+external,4,1,Engine Casing,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,5,1,Engine Casing,Material,material,External,Aluminum price (ALI=F),ALI,,1.163,USD,lb,2000.0,2326.0,,,,,,,,,,,,,
+external,6,1,Engine Casing,Material,material,External,Steel HRC price (HRC=F),HRC,,781.0,USD,short ton,8.0,6248.0,,,,,,,,,,,,,
+external,7,1,Engine Casing,Material,material,External,Copper price (HG=F),HG,,4.448,USD,lb,120.0,533.76,,,,,,,,,,,,,
+external,8,1,Engine Casing,Material,material,External,Platinum price (PL=F),PL,,972.0,USD,troy oz,6.0,5832.0,,,,,,,,,,,,,
+external,9,1,Engine Casing,Material,material,External,Palladium price (PA=F),PA,,1054.0,USD,troy oz,4.0,4216.0,,,,,,,,,,,,,
+external,10,1,Engine Casing,Material,material,External,Gold price (GC=F),GC,,2850.0,USD,troy oz,1.2,3420.0,,,,,,,,,,,,,
+external,11,1,Engine Casing,Material,material,External,Silver price (SI=F),SI,,34.03,USD,troy oz,55.0,1871.65,,,,,,,,,,,,,
+external,12,2,Fan blade manufacturing,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,13,2,Fan blade manufacturing,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-23,,,days,,,,,,,,,,,,,,,
+external,14,2,Fan blade manufacturing,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,25361.0,32208.0,,,,,,,,,,,,,
+external,15,2,Fan blade manufacturing,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,16,2,Fan blade manufacturing,Material,material,External,Aluminum price (ALI=F),ALI,,1.112,USD,lb,850.0,945.2,,,,,,,,,,,,,
+external,17,2,Fan blade manufacturing,Material,material,External,Steel HRC price (HRC=F),HRC,,814.0,USD,short ton,2.2,1790.8,,,,,,,,,,,,,
+external,18,2,Fan blade manufacturing,Material,material,External,Copper price (HG=F),HG,,4.336,USD,lb,90.0,390.24,,,,,,,,,,,,,
+external,19,2,Fan blade manufacturing,Material,material,External,Platinum price (PL=F),PL,,971.0,USD,troy oz,9.0,8739.0,,,,,,,,,,,,,
+external,20,2,Fan blade manufacturing,Material,material,External,Palladium price (PA=F),PA,,1021.0,USD,troy oz,6.0,6126.0,,,,,,,,,,,,,
+external,21,2,Fan blade manufacturing,Material,material,External,Gold price (GC=F),GC,,2740.0,USD,troy oz,2.0,5480.0,,,,,,,,,,,,,
+external,22,2,Fan blade manufacturing,Material,material,External,Silver price (SI=F),SI,,31.33,USD,troy oz,42.0,1315.86,,,,,,,,,,,,,
+external,23,3,Compressor assembly,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,24,3,Compressor assembly,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-24,,,days,,,,,,,,,,,,,,,
+external,25,3,Compressor assembly,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,44608.0,56652.0,,,,,,,,,,,,,
+external,26,3,Compressor assembly,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,27,3,Compressor assembly,Material,material,External,Aluminum price (ALI=F),ALI,,1.164,USD,lb,1250.0,1455.0,,,,,,,,,,,,,
+external,28,3,Compressor assembly,Material,material,External,Steel HRC price (HRC=F),HRC,,824.0,USD,short ton,4.0,3296.0,,,,,,,,,,,,,
+external,29,3,Compressor assembly,Material,material,External,Copper price (HG=F),HG,,4.423,USD,lb,260.0,1149.98,,,,,,,,,,,,,
+external,30,3,Compressor assembly,Material,material,External,Platinum price (PL=F),PL,,1016.0,USD,troy oz,16.0,16256.0,,,,,,,,,,,,,
+external,31,3,Compressor assembly,Material,material,External,Palladium price (PA=F),PA,,1064.0,USD,troy oz,11.0,11704.0,,,,,,,,,,,,,
+external,32,3,Compressor assembly,Material,material,External,Gold price (GC=F),GC,,2736.0,USD,troy oz,3.1,8481.6,,,,,,,,,,,,,
+external,33,3,Compressor assembly,Material,material,External,Silver price (SI=F),SI,,33.69,USD,troy oz,82.0,2762.58,,,,,,,,,,,,,
+external,34,4,Chamber fabrication,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,35,4,Chamber fabrication,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-25,,,days,,,,,,,,,,,,,,,
+external,36,4,Chamber fabrication,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,79516.0,100985.0,,,,,,,,,,,,,
+external,37,4,Chamber fabrication,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,38,4,Chamber fabrication,Material,material,External,Aluminum price (ALI=F),ALI,,1.168,USD,lb,320.0,373.76,,,,,,,,,,,,,
+external,39,4,Chamber fabrication,Material,material,External,Steel HRC price (HRC=F),HRC,,807.0,USD,short ton,3.1,2501.7,,,,,,,,,,,,,
+external,40,4,Chamber fabrication,Material,material,External,Copper price (HG=F),HG,,4.393,USD,lb,150.0,658.95,,,,,,,,,,,,,
+external,41,4,Chamber fabrication,Material,material,External,Platinum price (PL=F),PL,,1060.0,USD,troy oz,32.0,33920.0,,,,,,,,,,,,,
+external,42,4,Chamber fabrication,Material,material,External,Palladium price (PA=F),PA,,997.0,USD,troy oz,26.0,25922.0,,,,,,,,,,,,,
+external,43,4,Chamber fabrication,Material,material,External,Gold price (GC=F),GC,,2751.0,USD,troy oz,5.4,14855.4,,,,,,,,,,,,,
+external,44,4,Chamber fabrication,Material,material,External,Silver price (SI=F),SI,,30.93,USD,troy oz,62.0,1917.66,,,,,,,,,,,,,
+external,45,5,Turbine manufacturing,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,46,5,Turbine manufacturing,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-26,,,days,,,,,,,,,,,,,,,
+external,47,5,Turbine manufacturing,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,101960.0,129489.0,,,,,,,,,,,,,
+external,48,5,Turbine manufacturing,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,49,5,Turbine manufacturing,Material,material,External,Aluminum price (ALI=F),ALI,,1.182,USD,lb,620.0,732.84,,,,,,,,,,,,,
+external,50,5,Turbine manufacturing,Material,material,External,Steel HRC price (HRC=F),HRC,,829.0,USD,short ton,5.2,4310.8,,,,,,,,,,,,,
+external,51,5,Turbine manufacturing,Material,material,External,Copper price (HG=F),HG,,4.69,USD,lb,310.0,1453.9,,,,,,,,,,,,,
+external,52,5,Turbine manufacturing,Material,material,External,Platinum price (PL=F),PL,,1033.0,USD,troy oz,42.0,43386.0,,,,,,,,,,,,,
+external,53,5,Turbine manufacturing,Material,material,External,Palladium price (PA=F),PA,,1025.0,USD,troy oz,31.0,31775.0,,,,,,,,,,,,,
+external,54,5,Turbine manufacturing,Material,material,External,Gold price (GC=F),GC,,2900.0,USD,troy oz,6.5,18850.0,,,,,,,,,,,,,
+external,55,5,Turbine manufacturing,Material,material,External,Silver price (SI=F),SI,,32.03,USD,troy oz,105.0,3363.15,,,,,,,,,,,,,
+external,56,6,Nozzle assembly,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,57,6,Nozzle assembly,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-27,,,days,,,,,,,,,,,,,,,
+external,58,6,Nozzle assembly,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,47323.0,60100.0,,,,,,,,,,,,,
+external,59,6,Nozzle assembly,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,60,6,Nozzle assembly,Material,material,External,Aluminum price (ALI=F),ALI,,1.155,USD,lb,260.0,300.3,,,,,,,,,,,,,
+external,61,6,Nozzle assembly,Material,material,External,Steel HRC price (HRC=F),HRC,,847.0,USD,short ton,2.6,2202.2,,,,,,,,,,,,,
+external,62,6,Nozzle assembly,Material,material,External,Copper price (HG=F),HG,,4.604,USD,lb,85.0,391.34,,,,,,,,,,,,,
+external,63,6,Nozzle assembly,Material,material,External,Platinum price (PL=F),PL,,1049.0,USD,troy oz,21.0,22029.0,,,,,,,,,,,,,
+external,64,6,Nozzle assembly,Material,material,External,Palladium price (PA=F),PA,,1031.0,USD,troy oz,15.0,15465.0,,,,,,,,,,,,,
+external,65,6,Nozzle assembly,Material,material,External,Gold price (GC=F),GC,,2855.0,USD,troy oz,2.4,6852.0,,,,,,,,,,,,,
+external,66,6,Nozzle assembly,Material,material,External,Silver price (SI=F),SI,,30.73,USD,troy oz,41.0,1259.93,,,,,,,,,,,,,
+external,67,7,Bearing assembly,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,68,7,Bearing assembly,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-28,,,days,,,,,,,,,,,,,,,
+external,69,7,Bearing assembly,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,33018.0,41933.0,,,,,,,,,,,,,
+external,70,7,Bearing assembly,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,71,7,Bearing assembly,Material,material,External,Aluminum price (ALI=F),ALI,,1.125,USD,lb,160.0,180.0,,,,,,,,,,,,,
+external,72,7,Bearing assembly,Material,material,External,Steel HRC price (HRC=F),HRC,,803.0,USD,short ton,1.5,1204.5,,,,,,,,,,,,,
+external,73,7,Bearing assembly,Material,material,External,Copper price (HG=F),HG,,4.359,USD,lb,65.0,283.33,,,,,,,,,,,,,
+external,74,7,Bearing assembly,Material,material,External,Platinum price (PL=F),PL,,973.0,USD,troy oz,12.0,11676.0,,,,,,,,,,,,,
+external,75,7,Bearing assembly,Material,material,External,Palladium price (PA=F),PA,,963.0,USD,troy oz,8.0,7704.0,,,,,,,,,,,,,
+external,76,7,Bearing assembly,Material,material,External,Gold price (GC=F),GC,,2782.0,USD,troy oz,1.8,5007.6,,,,,,,,,,,,,
+external,77,7,Bearing assembly,Material,material,External,Silver price (SI=F),SI,,33.03,USD,troy oz,185.0,6110.55,,,,,,,,,,,,,
+external,78,8,Fuel system components,Economic / Inflation,economic,External,Inflation will remain within the central bank's forecast range and will not materially affect project delivery costs.,,,3.3,GBP,Percentage,,,,,,,,,,,,,,,
+external,79,8,Fuel system components,Commercial,boolean,Internal,Funding will be available on time per the milestone schedule.,,2026-04-29,,,days,,,,,,,,,,,,,,,
+external,80,8,Fuel system components,Economic / Inflation,economic,External,US Exchange rate fluctuation,,,1.27,USD,USD,50328.0,63917.0,,,,,,,,,,,,,
+external,81,8,Fuel system components,Third Party,boolean,External,All subcontractors and third-party vendors will deliver on time and comply with the main contract's requirements.,,2026-04-22,,,days,,,,,,,,,,,,,,,
+external,82,8,Fuel system components,Material,material,External,Aluminum price (ALI=F),ALI,,1.138,USD,lb,420.0,477.96,,,,,,,,,,,,,
+external,83,8,Fuel system components,Material,material,External,Steel HRC price (HRC=F),HRC,,809.0,USD,short ton,2.1,1698.9,,,,,,,,,,,,,
+external,84,8,Fuel system components,Material,material,External,Copper price (HG=F),HG,,4.418,USD,lb,410.0,1811.38,,,,,,,,,,,,,
+external,85,8,Fuel system components,Material,material,External,Platinum price (PL=F),PL,,977.0,USD,troy oz,19.0,18563.0,,,,,,,,,,,,,
+external,86,8,Fuel system components,Material,material,External,Palladium price (PA=F),PA,,1082.0,USD,troy oz,13.0,14066.0,,,,,,,,,,,,,
+external,87,8,Fuel system components,Material,material,External,Gold price (GC=F),GC,,2845.0,USD,troy oz,4.1,11664.5,,,,,,,,,,,,,
+external,88,8,Fuel system components,Material,material,External,Silver price (SI=F),SI,,32.93,USD,troy oz,72.0,2370.96,,,,,,,,,,,,,
+external,89,1,Engine Casing,Energy,energy,External,Natural Gas for heat treatment furnaces (NG=F),NG,2026-04-23,3.5,USD,MMBtu,550.0,1925.0,,,,,,,,,,,,,
+external,90,1,Engine Casing,Energy,energy,External,Brent Crude oil for transport & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,55.0,4675.0,,,,,,,,,,,,,
+external,91,2,Fan blade manufacturing,Energy,energy,External,Natural Gas for titanium forging furnaces (NG=F),NG,2026-04-23,3.5,USD,MMBtu,900.0,3150.0,,,,,,,,,,,,,
+external,92,2,Fan blade manufacturing,Energy,energy,External,Brent Crude oil for transport & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,35.0,2975.0,,,,,,,,,,,,,
+external,93,3,Compressor assembly,Energy,energy,External,Natural Gas for process heating (NG=F),NG,2026-04-23,3.5,USD,MMBtu,320.0,1120.0,,,,,,,,,,,,,
+external,94,3,Compressor assembly,Energy,energy,External,Brent Crude oil for rig testing & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,90.0,7650.0,,,,,,,,,,,,,
+external,95,4,Chamber fabrication,Energy,energy,External,Natural Gas for brazing & diffusion bonding (NG=F),NG,2026-04-23,3.5,USD,MMBtu,680.0,2380.0,,,,,,,,,,,,,
+external,96,4,Chamber fabrication,Energy,energy,External,Brent Crude oil for transport & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,28.0,2380.0,,,,,,,,,,,,,
+external,97,5,Turbine manufacturing,Energy,energy,External,Natural Gas for thermal barrier coating ovens (NG=F),NG,2026-04-23,3.5,USD,MMBtu,1100.0,3850.0,,,,,,,,,,,,,
+external,98,5,Turbine manufacturing,Energy,energy,External,Brent Crude oil for transport & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,65.0,5525.0,,,,,,,,,,,,,
+external,99,6,Nozzle assembly,Energy,energy,External,Natural Gas for welding & heat treatment (NG=F),NG,2026-04-23,3.5,USD,MMBtu,420.0,1470.0,,,,,,,,,,,,,
+external,100,6,Nozzle assembly,Energy,energy,External,Brent Crude oil for transport & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,22.0,1870.0,,,,,,,,,,,,,
+external,101,7,Bearing assembly,Energy,energy,External,Natural Gas for bearing race heat treatment (NG=F),NG,2026-04-23,3.5,USD,MMBtu,270.0,945.0,,,,,,,,,,,,,
+external,102,7,Bearing assembly,Energy,energy,External,Brent Crude oil for lubricants & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,45.0,3825.0,,,,,,,,,,,,,
+external,103,8,Fuel system components,Energy,energy,External,Natural Gas for manufacturing processes (NG=F),NG,2026-04-23,3.5,USD,MMBtu,310.0,1085.0,,,,,,,,,,,,,
+external,104,8,Fuel system components,Energy,energy,External,Brent Crude oil for test-rig fuel & logistics (BZ=F),BZ,2026-04-23,85.0,USD,barrel,110.0,9350.0,,,,,,,,,,,,,
+internal,AS001,,Engine Casing,Commercial,,,,,,,,,,,Skilled machinist availability,A. Reynolds,Engine Casing: sufficient CNC machinists available at Barnoldswick site for casting schedule.,12.0,10.0,headcount,-0.17,0.0,62,2026-04-23,14,,Monitor
+internal,AS002,,Engine Casing,Third-party,,,,,,,,,,,Titanium supplier lead time,B. Shah,Engine Casing: primary titanium blank supplier delivers within 12-week lead time.,12.0,15.0,weeks,0.0,0.25,54,2026-04-23,14,AS001,Monitor
+internal,AS003,,Engine Casing,Commercial,,,,,,,,,,,Design freeze milestone,C. Booth,Engine Casing: design freeze completed before Q2 manufacturing kick-off.,100.0,100.0,%,0.0,0.0,88,2026-04-23,30,,Open
+internal,AS004,,Fan blade manufacturing,Commercial,,,,,,,,,,,Composite layup team capacity,D. Farooq,Fan blade manufacturing: composite layup team capacity sufficient for 40 blades/week target.,40.0,36.0,blades/week,-0.1,0.0,67,2026-04-23,7,,Open
+internal,AS005,,Fan blade manufacturing,Third-party,,,,,,,,,,,Autoclave availability,D. Farooq,Fan blade manufacturing: shared autoclave available per production schedule without clash.,95.0,80.0,% schedule adherence,-0.16,0.0,58,2026-04-23,7,AS004,Monitor
+internal,AS006,,Fan blade manufacturing,Commercial,,,,,,,,,,,Blade inspection pass rate,E. Weston,Fan blade manufacturing: NDT first-pass inspection rate remains above 92%.,95.0,91.0,% pass rate,-0.04,0.0,72,2026-04-23,14,AS005,Open
+internal,AS007,,Compressor assembly,Commercial,,,,,,,,,,,Assembly jig tooling readiness,F. Patel,Compressor assembly: all bespoke assembly jigs certified and available before production start.,100.0,85.0,% complete,-0.15,0.0,61,2026-04-23,14,,Monitor
+internal,AS008,,Compressor assembly,Third-party,,,,,,,,,,,Stator vane sub-supplier delivery,G. Huang,Compressor assembly: stator vane sub-supplier delivers to schedule within ±5 days.,5.0,12.0,days variance,0.0,1.4,48,2026-04-23,7,AS007,Monitor
+internal,AS009,,Compressor assembly,Commercial,,,,,,,,,,,Compressor test-cell availability,F. Patel,Compressor assembly: test cell booked and available for rig testing per milestone.,100.0,100.0,% booked,0.0,0.0,84,2026-04-23,30,,Open
+internal,AS010,,Chamber fabrication,Commercial,,,,,,,,,,,Brazing furnace certification,H. Okonkwo,Chamber fabrication: vacuum brazing furnace re-certified after maintenance within planned window.,100.0,100.0,% certified,0.0,0.0,91,2026-04-23,30,,Open
+internal,AS011,,Chamber fabrication,Third-party,,,,,,,,,,,Nickel alloy wafer supplier,I. Novak,Chamber fabrication: nickel superalloy wafer supplier maintains 8-week lead time.,8.0,11.0,weeks,0.0,0.375,55,2026-04-23,14,,Monitor
+internal,AS012,,Chamber fabrication,Economic / Inflation,,,,,,,,,,,Quality gate sign-off,H. Okonkwo,Chamber fabrication: quality gate sign-offs completed within 3 working days of submission.,3.0,5.0,days,0.67,0.0,63,2026-04-23,14,AS010,Monitor
+internal,AS013,,Turbine manufacturing,Commercial,,,,,,,,,,,TBC coating machine uptime,J. Fraser,Turbine manufacturing: thermal barrier coating machine uptime ≥95% over production period.,95.0,88.0,% uptime,-0.07,0.0,57,2026-04-23,7,,Monitor
+internal,AS014,,Turbine manufacturing,Third-party,,,,,,,,,,,CMSX-4 alloy supply,K. Andersen,Turbine manufacturing: CMSX-4 single-crystal alloy delivered per 6-week agreed cadence.,6.0,8.0,weeks lead,0.0,0.33,51,2026-04-23,7,AS013,Monitor
+internal,AS015,,Turbine manufacturing,Commercial,,,,,,,,,,,Blade casting yield,J. Fraser,Turbine manufacturing: single-crystal casting first-pass yield ≥80%.,82.0,76.0,% yield,-0.07,0.0,46,2026-04-23,7,AS014,Monitor
+internal,AS016,,Nozzle assembly,Commercial,,,,,,,,,,,Electron beam welder availability,L. Brennan,Nozzle assembly: EB welder available per schedule without shared-resource conflict.,100.0,90.0,% scheduled slots,-0.1,0.0,73,2026-04-23,14,,Open
+internal,AS017,,Nozzle assembly,Commercial,,,,,,,,,,,Flow-path geometry tolerance,M. Osei,Nozzle assembly: nozzle flow-path geometry held within ±0.05 mm across production run.,0.05,0.06,mm tolerance,0.2,0.0,69,2026-04-23,14,AS016,Open
+internal,AS018,,Bearing assembly,Third-party,,,,,,,,,,,Bearing steel cleanliness grade,N. Yamamoto,Bearing assembly: steel stock meets ASTM A295 Grade 1 cleanliness for all bearing races.,100.0,100.0,% compliant,0.0,0.0,86,2026-04-23,30,,Open
+internal,AS019,,Bearing assembly,Commercial,,,,,,,,,,,Precision grinding capacity,O. Singh,Bearing assembly: precision grinding machines available for 2-shift operation throughout.,2.0,1.5,shifts/day,-0.25,0.0,60,2026-04-23,14,,Monitor
+internal,AS020,,Bearing assembly,Third-party,,,,,,,,,,,Cage supplier on-time delivery,N. Yamamoto,Bearing assembly: PTFE cage supplier on-time delivery rate ≥95%.,95.0,88.0,% OTD,0.0,-0.07,65,2026-04-23,14,AS018,Monitor
+internal,AS021,,Fuel system components,Commercial,,,,,,,,,,,High-pressure pump calibration,P. Okafor,Fuel system components: HP fuel pump calibration rig certified and available.,100.0,100.0,% ready,0.0,0.0,92,2026-04-23,30,,Open
+internal,AS022,,Fuel system components,Third-party,,,,,,,,,,,Fuel system seal supplier,Q. Lindqvist,Fuel system components: high-temp seal supplier delivers to 4-week lead time.,4.0,6.0,weeks lead,0.0,0.5,59,2026-04-23,14,,Monitor
+internal,AS023,,Fuel system components,Commercial,,,,,,,,,,,Fuel flow rate accuracy,P. Okafor,Fuel system components: fuel metering units calibrated to ±0.5% flow accuracy.,0.5,0.7,% accuracy,0.4,0.0,64,2026-04-23,14,AS021,Monitor
+internal,AS024,,Fuel system components,Economic / Inflation,,,,,,,,,,,ATEX compliance certification,Q. Lindqvist,Fuel system components: ATEX Zone 1 certification received before integration testing.,100.0,75.0,% complete,-0.25,0.0,50,2026-04-23,14,AS022,Monitor

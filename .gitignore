@@ -7,14 +7,17 @@ __pycache__/
 .venv
 venv
 
-# Generated data output — re-fetched on each run, not source code
-Data/CSV/
+# Generated market data CSVs — re-fetched from APIs on each run
+Data/CSV/metal_prices*.csv
+Data/CSV/energy_prices*.csv
+Data/CSV/finance_data*.csv
+
+# Generated JSON output and database
 Data/JSON/
 Data/*.db
+Data/backups/
 
-# Stale root-level output files from before Data/ folder was created
-*.csv
-*.json
+# HPO_Assumptions_data.csv is source data (hand-authored) — it IS tracked in git
 
 # macOS
 .DS_Store
