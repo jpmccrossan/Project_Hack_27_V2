@@ -10,7 +10,10 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "Data" / "jet_engine_costs.db"
 
-_SAFE_SQL = re.compile(r"^\s*SELECT\b", re.IGNORECASE)
+# Allow SELECT and WITH (CTEs like "WITH x AS (SELECT...) SELECT...")
+# Reject any query containing write/DDL operations for safety.
+_ALLOWED_START = re.compile(r"^\s*(SELECT|WITH)\b", re.IGNORECASE)
+_WRITE_OPS     = re.compile(r"\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|REPLACE|TRUNCATE|ATTACH|DETACH|PRAGMA)\b", re.IGNORECASE)
 
 
 def _con():
@@ -76,7 +79,9 @@ def execute_sql(query: str) -> str:
     Rejects non-SELECT statements. Returns error text on failure.
     """
     query = query.strip()
-    if not _SAFE_SQL.match(query):
+    if not _ALLOWED_START.match(query):
+        return "ERROR: Only SELECT queries are permitted."
+    if _WRITE_OPS.search(query):
         return "ERROR: Only SELECT queries are permitted."
     try:
         df = _q(query)
@@ -110,17 +115,65 @@ def _build_schema_description():
 
     lines.append("""
 price_snapshots (commodity_id, price [USD], fetched_at)
-  Latest price: WHERE id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
+  IMPORTANT: price_snapshots has NO name column. Always JOIN commodities to get the name.
+  Latest price per commodity: WHERE id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
 
 price_history (commodity_id, date [YYYY-MM-DD], close [USD])
-  Weekly data 2021-present. 1-year change: compare snapshot vs WHERE date <= DATE('now','-1 year')
+  Weekly data 2021-present.
+  Row closest to 1 year ago (use this for 1Y change):
+    JOIN (SELECT commodity_id, MAX(date) AS d FROM price_history
+          WHERE date <= DATE('now','-1 year') GROUP BY commodity_id) yr
+    ON ph.commodity_id=yr.commodity_id AND ph.date=yr.d
+
+WORKED EXAMPLE -- 1-year price change for metals (use this exact pattern):
+  WITH snap AS (
+    SELECT commodity_id, price FROM price_snapshots
+    WHERE id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
+  ),
+  yr AS (
+    SELECT ph.commodity_id, ph.close AS price_1y FROM price_history ph
+    JOIN (SELECT commodity_id, MAX(date) AS d FROM price_history
+          WHERE date <= DATE('now','-1 year') GROUP BY commodity_id) t
+    ON ph.commodity_id=t.commodity_id AND ph.date=t.d
+  )
+  SELECT c.name, cat.name AS category,
+         ROUND(s.price,2) AS current_usd,
+         ROUND(yr.price_1y,2) AS price_1y,
+         ROUND((s.price - yr.price_1y)/yr.price_1y*100,1) AS change_pct
+  FROM commodities c
+  JOIN categories cat ON c.category_id=cat.id
+  JOIN snap s ON c.id=s.commodity_id
+  LEFT JOIN yr ON c.id=yr.commodity_id
+  WHERE cat.name='metal'
+  ORDER BY change_pct DESC LIMIT 3
+
+WORKED EXAMPLE -- GBP/USD live rate and 1Y change:
+  WITH cur AS (
+    SELECT ps.price AS rate, ps.fetched_at FROM price_snapshots ps
+    JOIN commodities c ON ps.commodity_id=c.id
+    WHERE c.name='GBP/USD'
+    ORDER BY ps.id DESC LIMIT 1
+  ),
+  yr AS (
+    SELECT ph.close AS rate_1y FROM price_history ph
+    JOIN commodities c ON ph.commodity_id=c.id
+    WHERE c.name='GBP/USD' AND ph.date <= DATE('now','-1 year')
+    ORDER BY ph.date DESC LIMIT 1
+  )
+  SELECT cur.rate, yr.rate_1y,
+         ROUND((cur.rate-yr.rate_1y)/yr.rate_1y*100,2) AS change_pct_1y,
+         cur.fetched_at
+  FROM cur, yr
+
+IMPORTANT -- filtering commodities by category:
+  category_id is an INTEGER foreign key. NEVER write WHERE category_id='metal'.
+  Always JOIN: JOIN categories cat ON c.category_id=cat.id WHERE cat.name='metal'
+  Category names: metal, energy, fx_rate, macro_economic
 
 assumptions (assumption_id, project_id, project_name, assumption_type [boolean|economic|material|energy],
   assumption, ticker, price_per_unit, currency, unit, qty, total_cost,
   ai_classification, ai_risk_level, ai_rationale)
-  8 projects: Engine Casing, Fan blade manufacturing, Compressor assembly, Chamber fabrication,
-  Turbine manufacturing, Nozzle assembly, Bearing assembly, Fuel system components.
-  JOIN commodities ON c.ticker = a.ticker||'=F' OR c.ticker = a.ticker
+  Filter by project: WHERE project_name='Turbine manufacturing'  (no JOIN needed, project_name is a text column)
 
 projects (project_id, project_name, customer_name, budget_gbp, budget_threshold_pct,
   confidence_score, status [Active|Monitor|At Risk|On Hold|Complete])
@@ -133,14 +186,14 @@ assumption_tracker (assumption_id [ASXXX], project_name, title, category, owner,
   confidence_score, last_review_date [YYYY-MM-DD], review_interval_days [INTEGER days],
   dependencies, status [Open|Monitor|Mitigated|Closed],
   ai_classification, ai_risk_level, ai_rationale)
-  Overdue check: CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) > review_interval_days
-  Days overdue: CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) - review_interval_days
-  Example: SELECT assumption_id, title, owner, last_review_date, review_interval_days,
+
+WORKED EXAMPLE -- overdue reviews:
+  SELECT assumption_id, title, owner, last_review_date, review_interval_days,
     CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) AS days_since_review,
     CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) - review_interval_days AS days_overdue
-    FROM assumption_tracker
-    WHERE CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) > review_interval_days
-    ORDER BY days_overdue DESC
+  FROM assumption_tracker
+  WHERE CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) > review_interval_days
+  ORDER BY days_overdue DESC
 
 assumption_audit_log (timestamp, assumption_id, field_name, old_value, new_value, user)
 
