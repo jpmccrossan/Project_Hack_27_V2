@@ -113,7 +113,7 @@ price_snapshots (commodity_id, price [USD], fetched_at)
   Latest price: WHERE id IN (SELECT MAX(id) FROM price_snapshots GROUP BY commodity_id)
 
 price_history (commodity_id, date [YYYY-MM-DD], close [USD])
-  Weekly data 2021–present. 1-year change: compare snapshot vs WHERE date <= DATE('now','-1 year')
+  Weekly data 2021-present. 1-year change: compare snapshot vs WHERE date <= DATE('now','-1 year')
 
 assumptions (assumption_id, project_id, project_name, assumption_type [boolean|economic|material|energy],
   assumption, ticker, price_per_unit, currency, unit, qty, total_cost,
@@ -128,18 +128,27 @@ projects (project_id, project_name, customer_name, budget_gbp, budget_threshold_
 project_audit_log (project_id, timestamp, field_name, old_value, new_value, user, change_reason)
   Confidence history: WHERE field_name='confidence_score' ORDER BY timestamp
 
-assumption_tracker (assumption_id [ASXXX], project_name, title, category, owner,
+assumption_tracker (assumption_id [ASXXX], project_name, title, category, owner, description,
   baseline_value, current_value, unit, internal_drift_pct, external_drift_pct,
-  confidence_score, last_review_date, status [Open|Monitor|Mitigated|Closed],
+  confidence_score, last_review_date [YYYY-MM-DD], review_interval_days [INTEGER days],
+  dependencies, status [Open|Monitor|Mitigated|Closed],
   ai_classification, ai_risk_level, ai_rationale)
+  Overdue check: CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) > review_interval_days
+  Days overdue: CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) - review_interval_days
+  Example: SELECT assumption_id, title, owner, last_review_date, review_interval_days,
+    CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) AS days_since_review,
+    CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) - review_interval_days AS days_overdue
+    FROM assumption_tracker
+    WHERE CAST((julianday('now') - julianday(last_review_date)) AS INTEGER) > review_interval_days
+    ORDER BY days_overdue DESC
 
 assumption_audit_log (timestamp, assumption_id, field_name, old_value, new_value, user)
 
 macro_data (country_id, indicator_id, value, year)
-countries (id, name) — UK=1, US=2, Australia=3, Canada=4, Japan=5, Germany=6, France=7, China=8
-macro_indicators (id, name) — CPI=1, GDP Growth=2, Unemployment=3, Lending Rate=4, Real Interest=5
+countries (id, name) -- UK=1, US=2, Australia=3, Canada=4, Japan=5, Germany=6, France=7, China=8
+macro_indicators (id, name) -- CPI=1, GDP Growth=2, Unemployment=3, Lending Rate=4, Real Interest=5
 component_materials (component_id, commodity_id, notes)
-jet_engine_components (id, name) — query: SELECT id,name FROM jet_engine_components""")
+jet_engine_components (id, name) -- query: SELECT id,name FROM jet_engine_components""")
 
     return "\n".join(lines)
 
@@ -178,6 +187,16 @@ def build_full_system_prompt():
         "Use multiple queries if needed. If a query errors, read the error and fix it.\n"
         "ALWAYS query for specific numbers — never guess or make up values.\n"
         "Only SELECT is permitted.\n\n"
+
+        "## SQLITE DATE FUNCTIONS (this is SQLite — not SQL Server, MySQL, or PostgreSQL)\n"
+        "NEVER use: DATEDIFF, DATEADD, GETDATE, NOW(), CURRENT_TIMESTAMP as a function call.\n"
+        "ALWAYS use these SQLite equivalents:\n"
+        "  Days between two dates:  CAST((julianday(date2) - julianday(date1)) AS INTEGER)\n"
+        "  Days since a date:       CAST((julianday('now') - julianday(some_date)) AS INTEGER)\n"
+        "  Today's date:            DATE('now')\n"
+        "  N days ago:              DATE('now', '-N days')  e.g. DATE('now', '-30 days')\n"
+        "  N days in future:        DATE('now', '+N days')\n"
+        "  Overdue check:           julianday('now') - julianday(last_review_date) > review_interval_days\n\n"
 
         "## CONVERSION\n"
         "GBP/USD rate: {:.4f}. GBP = USD ÷ {:.4f}. Always show both currencies.\n\n".format(gbp_usd, gbp_usd) +
