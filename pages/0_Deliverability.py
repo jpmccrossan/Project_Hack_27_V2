@@ -14,6 +14,13 @@ _ROOT = str(Path(__file__).parent.parent)
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
+# Ensure schema is always up to date — safe to run every time (uses IF NOT EXISTS)
+try:
+    from Database.db_setup import build as _db_build
+    _db_build()
+except Exception:
+    pass
+
 from utils.shared import (
     BLUE, BLUE_DIM, BLUE_DARK, GOLD, BG, CARD_BG, GREEN, AMBER, RED,
     jic_label, get_gbp_usd, db_query as _q, db_execute as _execute,

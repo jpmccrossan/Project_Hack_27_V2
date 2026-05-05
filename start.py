@@ -121,7 +121,8 @@ def _ensure_data() -> None:
         _db_build()
         print("  Schema ready.")
     except Exception as e:
-        print(f"  WARNING: DB schema setup failed: {e}")
+        print(f"  ERROR: DB schema setup failed: {e}")
+        import traceback; traceback.print_exc()
 
     # Check whether market price data is already present
     needs_fetch = False

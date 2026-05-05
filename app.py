@@ -1,7 +1,19 @@
+import sys
 import streamlit as st
 from pathlib import Path
 import sqlite3
 import pandas as pd
+
+_ROOT = str(Path(__file__).parent)
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+# Ensure DB schema is always current — runs CREATE TABLE IF NOT EXISTS, safe every time
+try:
+    from Database.db_setup import build as _db_build
+    _db_build()
+except Exception:
+    pass
 
 st.set_page_config(
     page_title="The Assumptionisator — Project Hack 27",
